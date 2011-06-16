@@ -9,20 +9,35 @@ CartoDB importer is a Ruby gem that makes your life easier when importing data f
   
 ## Installation and dependencies ##
 
-bla bla bla
+To install Ruby dependencies just install `bundler` gem and run the command `bundle install` in your shell.
+
+There are also some dependencies of external Python libraries (WTF!):
+
+- Python setup tools: `$ sudo apt-get install python-setuptools`
+    
+- Python GDAL: `$ sudo apt-get install python-gdal`
+    
+- Python Chardet (install from http://chardet.feedparser.org/download/)
+    
+- Python ArgParse (install from http://code.google.com/p/argparse/)
+    
+- Brewery:
+
+    `$ git clone git://github.com/Stiivi/brewery.git`
+    `$ python setup.py install`
 
 ## How to use it? ##
 
 The way to use this gem is to initialize a object of class Cartodb::Importer using the appropiate parameters.
 
-  importer = Cartodb::Importer.new :import_from_file => "path to CSV file", :srid => 4326, :database => "...",
-                                   :username => "...", :password => "..."
-  result = importer.import!
+    importer = Cartodb::Importer.new :import_from_file => "path to CSV file", :srid => 4326, :database => "...",
+                                     :username => "...", :password => "..."
+    result = importer.import!
   
 If everything works fine, a new table will exist in the given database. A `result` object is return with some information about the import, such as the number of rows, or the name of the table.
 
-  puts result.rows_imported
-  # > 43243
+    puts result.rows_imported
+    # > 43243
   
 If any error happens, an exception could be raised.
 
