@@ -3,11 +3,12 @@
 module CartoDB
   class Importer
     RESERVED_COLUMN_NAMES = %W{ oid tableoid xmin cmin xmax cmax ctid }
+    SUPPORTED_FORMATS = %W{ .csv .shp .ods .xls .xlsx }
     
     attr_accessor :import_from_file, :suggested_name,
                   :ext, :db_configuration, :db_connection
                   
-    attr_reader :table_created
+    attr_reader :table_created, :force_name
 
     def initialize(options = {})
       @table_created = nil
@@ -20,7 +21,10 @@ module CartoDB
       @db_connection = Sequel.connect("postgres://#{@db_configuration[:username]}:#{@db_configuration[:password]}@#{@db_configuration[:host]}:#{@db_configuration[:port]}/#{@db_configuration[:database]}")
 
       unless options[:suggested_name].nil? || options[:suggested_name].blank?
+        @force_name = true
         @suggested_name = get_valid_name(options[:suggested_name])
+      else
+        @force_name = false
       end
       
       if @import_from_file.is_a?(String)
@@ -65,10 +69,11 @@ module CartoDB
           name = entry.name.split('/').last
           next if name =~ /^(\.|\_{2})/
           entries << "/tmp/#{name}"
-          if File.extname(name) == '.shp'
-            @ext = '.shp'
+          if SUPPORTED_FORMATS.include?(File.extname(name))
+            @ext = File.extname(name)
+            @suggested_name = get_valid_name(File.basename(name,@ext).tr('.','_').downcase.sanitize) unless @force_name
             path = "/tmp/#{name}"
-            puts "Found original shapefile #{name} in path #{path}"
+            puts "Found original @ext file named #{name} in path #{path}"
           end
           if File.file?("/tmp/#{name}")
             FileUtils.rm("/tmp/#{name}")
@@ -132,7 +137,7 @@ module CartoDB
       elsif @ext == '.shp'
         host = @db_configuration[:host] ? "-h #{@db_configuration[:host]}" : ""
         port = @db_configuration[:port] ? "-p #{@db_configuration[:port]}" : ""
-        @suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize)
+        @suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize) unless @force_name
         random_name = "importing_table_#{@suggested_name}"
         puts "Table name to import: #{random_name}"
         command = `\`which python\` #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{random_name}`

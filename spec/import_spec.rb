@@ -75,6 +75,28 @@ describe CartoDB::Importer do
     result.rows_imported.should == 2003
     result.import_type.should == '.csv'
   end
+  
+  describe "#ZIP" do
+    it "should import CSV even from a ZIP file" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/pino.zip"),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      result.name.should == 'data'
+      result.rows_imported.should == 4
+      result.import_type.should == '.csv'
+    end
+
+    it "should import CSV even from a ZIP file with the given name" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/pino.zip"),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432, :suggested_name => "table123"
+      result = importer.import!
+      result.name.should == 'table123'
+      result.rows_imported.should == 4
+      result.import_type.should == '.csv'
+    end
+  end
 
   describe "#CSV" do
     it "should import a CSV file in the given database in a table named like the file" do
@@ -117,6 +139,16 @@ describe CartoDB::Importer do
                                        :host => 'localhost', :port => 5432
       result = importer.import!
       result.name.should == 'tm_world_borders_simpl_0_3_shp'
+      result.rows_imported.should == 246
+      result.import_type.should == '.shp'
+    end
+
+    it "should import SHP file TM_WORLD_BORDERS_SIMPL-0.3.zip but set the given name" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/TM_WORLD_BORDERS_SIMPL-0.3.zip"),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432, :suggested_name => 'borders'
+      result = importer.import!
+      result.name.should == 'borders'
       result.rows_imported.should == 246
       result.import_type.should == '.shp'
     end
