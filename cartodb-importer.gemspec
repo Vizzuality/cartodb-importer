@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   
   s.add_runtime_dependency 'sequel'
-  s.add_runtime_dependency "pg", "0.10.1"
+  s.add_runtime_dependency "pg", "0.11"
   s.add_runtime_dependency "sequel"
   s.add_runtime_dependency "roo"
   s.add_runtime_dependency "spreadsheet"
