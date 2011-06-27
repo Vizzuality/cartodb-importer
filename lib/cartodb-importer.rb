@@ -5,7 +5,6 @@ require 'bundler/setup'
 require 'pg'
 require 'sequel'
 require 'tempfile'
-require 'ruby-debug'
 require 'csv'
 require 'ostruct'
 require "roo"
