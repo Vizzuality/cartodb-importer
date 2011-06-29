@@ -5,12 +5,18 @@ module CartoDB
     RESERVED_COLUMN_NAMES = %W{ oid tableoid xmin cmin xmax cmax ctid }
     SUPPORTED_FORMATS = %W{ .csv .shp .ods .xls .xlsx }
     
+    class << self
+      attr_accessor :debug
+    end
+    @@debug = false
+    
     attr_accessor :import_from_file, :suggested_name,
                   :ext, :db_configuration, :db_connection
                   
     attr_reader :table_created, :force_name
 
     def initialize(options = {})
+      @@debug = options[:debug] if options[:debug]
       @table_created = nil
       @import_from_file = options[:import_from_file]
       raise "import_from_file value can't be nil" if @import_from_file.nil?
@@ -50,8 +56,8 @@ module CartoDB
         @ext ||= File.extname(original_filename)
       end
     rescue => e
-      puts $!
-      puts e.backtrace
+      log $!
+      log e.backtrace
       raise e
     end
     
@@ -64,7 +70,7 @@ module CartoDB
       
       entries = []
       if @ext == '.zip'
-        puts "Importing zip file: #{path}"
+        log "Importing zip file: #{path}"
         Zip::ZipFile.foreach(path) do |entry|
           name = entry.name.split('/').last
           next if name =~ /^(\.|\_{2})/
@@ -73,7 +79,7 @@ module CartoDB
             @ext = File.extname(name)
             @suggested_name = get_valid_name(File.basename(name,@ext).tr('.','_').downcase.sanitize) unless @force_name
             path = "/tmp/#{name}"
-            puts "Found original @ext file named #{name} in path #{path}"
+            log "Found original @ext file named #{name} in path #{path}"
           end
           if File.file?("/tmp/#{name}")
             FileUtils.rm("/tmp/#{name}")
@@ -118,9 +124,9 @@ module CartoDB
         @table_created = true
         command = "copy #{@suggested_name} from STDIN WITH (HEADER true, FORMAT 'csv')"
         import_csv_command = %Q{cat #{path} | `which psql` #{host} #{port} -U#{@db_configuration[:username]} -w -d #{@db_configuration[:database]} -c"#{command}"}
-        puts "Importing CSV. Executing command: " + import_csv_command
+        log "Importing CSV. Executing command: " + import_csv_command
         output = `#{import_csv_command}`
-        puts ">> #{output}"
+        log ">> #{output}"
       
         # Check if the file had data, if not rise an error because probably something went wrong
         if @db_connection["SELECT * from #{@suggested_name} LIMIT 1"].first.nil?
@@ -142,7 +148,7 @@ module CartoDB
         if command.strip.blank?
           raise "Error running python shp_normalizer script: \`which python\` #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{@suggested_name}"
         end
-        puts "Running shp2pgsql: #{command.strip} | `which psql` #{host} #{port} -U#{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
+        log "Running shp2pgsql: #{command.strip} | `which psql` #{host} #{port} -U#{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
         system("#{command.strip} | `which psql` #{host} #{port} -U#{@db_configuration[:username]} -w -d#{@db_configuration[:database]}")
         @table_created = true
         
@@ -157,10 +163,10 @@ module CartoDB
         })
       end
     rescue => e
-      puts "====================="
-      puts $!
-      puts e.backtrace
-      puts "====================="
+      log "====================="
+      log $!
+      log e.backtrace
+      log "====================="
       if !@table_created.nil?
         @db_connection.drop_table(@suggested_name)
       end
@@ -272,5 +278,10 @@ module CartoDB
       end
     end
     
+    def log(str)
+      if @@debug
+        puts str
+      end
+    end
   end
 end
