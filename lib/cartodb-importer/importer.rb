@@ -67,6 +67,8 @@ module CartoDB
       else
         @import_from_file.path
       end
+      python_bin_path = `which python`.strip
+      psql_bin_path = `which psql`.strip
       
       entries = []
       if @ext == '.zip'
@@ -115,7 +117,8 @@ module CartoDB
         copy.close
         path = copy.path
         
-        system %Q{`which python` -Wignore #{File.expand_path("../../../misc/csv_normalizer.py", __FILE__)} #{old_path} > #{path}}
+        command = %Q{#{python_bin_path} -Wignore #{File.expand_path("../../../misc/csv_normalizer.py", __FILE__)} #{old_path} > #{path}}
+        `#{command}`
         schema = guess_schema(path)
         host = @db_configuration[:host] ? "-h #{@db_configuration[:host]}" : ""
         port = @db_configuration[:port] ? "-p #{@db_configuration[:port]}" : ""
@@ -123,9 +126,9 @@ module CartoDB
         @db_connection.run("CREATE TABLE #{@suggested_name} (#{schema.join(', ')})")
         @table_created = true
         command = "copy #{@suggested_name} from STDIN WITH (HEADER true, FORMAT 'csv')"
-        import_csv_command = %Q{cat #{path} | `which psql` #{host} #{port} -U#{@db_configuration[:username]} -w -d #{@db_configuration[:database]} -c"#{command}"}
+        import_csv_command = %Q{cat #{path} | #{psql_bin_path} #{host} #{port} -U#{@db_configuration[:username]} -w -d #{@db_configuration[:database]} -c"#{command}"}
         log "Importing CSV. Executing command: " + import_csv_command
-        output = `#{import_csv_command}`
+        output = `#{import_csv_command} &> /dev/null`
         log ">> #{output}"
       
         # Check if the file had data, if not rise an error because probably something went wrong
@@ -145,12 +148,12 @@ module CartoDB
         port = @db_configuration[:port] ? "-p #{@db_configuration[:port]}" : ""
         @suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize) unless @force_name
         random_table_name = "importing_#{Time.now.to_i}_#{@suggested_name}"
-        command = `\`which python\` -Wignore #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{random_table_name}`
+        command = `#{python_bin_path} -Wignore #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{random_table_name}`
         if command.strip.blank?
           raise "Error running python shp_normalizer script: \`which python\` #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{@suggested_name}"
         end
-        log "Running shp2pgsql: #{command.strip} | `which psql` #{host} #{port} -U#{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
-        system("#{command.strip} | `which psql` #{host} #{port} -U#{@db_configuration[:username]} -w -d#{@db_configuration[:database]}")
+        log "Running shp2pgsql: #{command.strip} | #{psql_bin_path} #{host} #{port} -U#{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
+        `#{command.strip} 2> /dev/null | #{psql_bin_path} #{host} #{port} -U#{@db_configuration[:username]} -w -d#{@db_configuration[:database]} &> /dev/null`
         @db_connection.run("CREATE TABLE #{@suggested_name} AS SELECT * FROM #{random_table_name}")
         @db_connection.run("DROP TABLE #{random_table_name}")
         @table_created = true
