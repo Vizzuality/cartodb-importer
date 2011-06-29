@@ -115,7 +115,7 @@ module CartoDB
         copy.close
         path = copy.path
         
-        system %Q{`which python` #{File.expand_path("../../../misc/csv_normalizer.py", __FILE__)} #{old_path} > #{path}}
+        system %Q{`which python` -Wignore #{File.expand_path("../../../misc/csv_normalizer.py", __FILE__)} #{old_path} > #{path}}
         schema = guess_schema(path)
         host = @db_configuration[:host] ? "-h #{@db_configuration[:host]}" : ""
         port = @db_configuration[:port] ? "-p #{@db_configuration[:port]}" : ""
@@ -145,7 +145,7 @@ module CartoDB
         port = @db_configuration[:port] ? "-p #{@db_configuration[:port]}" : ""
         @suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize) unless @force_name
         random_table_name = "importing_#{Time.now.to_i}_#{@suggested_name}"
-        command = `\`which python\` #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{random_table_name}`
+        command = `\`which python\` -Wignore #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{random_table_name}`
         if command.strip.blank?
           raise "Error running python shp_normalizer script: \`which python\` #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{@suggested_name}"
         end
