@@ -144,12 +144,15 @@ module CartoDB
         host = @db_configuration[:host] ? "-h #{@db_configuration[:host]}" : ""
         port = @db_configuration[:port] ? "-p #{@db_configuration[:port]}" : ""
         @suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize) unless @force_name
-        command = `\`which python\` #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{@suggested_name}`
+        random_table_name = "importing_#{Time.now.to_i}_#{@suggested_name}"
+        command = `\`which python\` #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{random_table_name}`
         if command.strip.blank?
           raise "Error running python shp_normalizer script: \`which python\` #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{@suggested_name}"
         end
         log "Running shp2pgsql: #{command.strip} | `which psql` #{host} #{port} -U#{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
         system("#{command.strip} | `which psql` #{host} #{port} -U#{@db_configuration[:username]} -w -d#{@db_configuration[:database]}")
+        @db_connection.run("CREATE TABLE #{@suggested_name} AS SELECT * FROM #{random_table_name}")
+        @db_connection.run("DROP TABLE #{random_table_name}")
         @table_created = true
         
         entries.each{ |e| FileUtils.rm_rf(e) } if entries.any?
