@@ -108,6 +108,27 @@ describe CartoDB::Importer do
       result.rows_imported.should == 2003
       result.import_type.should == '.csv'
     end
+    
+    it "should import Food Security Aid Map_projects.csv" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/Food Security Aid Map_projects.csv"),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      result.name.should == 'food_security_aid_map_projects'
+      result.rows_imported.should == 827
+      result.import_type.should == '.csv'
+    end
+
+    it "should import world_heritage_list.csv" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/world_heritage_list.csv"),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      result.name.should == 'world_heritage_list'
+      result.rows_imported.should == 937
+      result.import_type.should == '.csv'
+    end
+
   end
   
   describe "#XLSX" do

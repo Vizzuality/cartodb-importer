@@ -1,5 +1,7 @@
 # coding: UTF-8
 
+require 'ruby-debug'
+
 module CartoDB
   class Importer
     RESERVED_COLUMN_NAMES = %W{ oid tableoid xmin cmin xmax cmax ctid }
@@ -40,8 +42,8 @@ module CartoDB
         open(@import_from_file) do |res|
           file_name = File.basename(import_from_file)
           @ext = File.extname(file_name)
-          @suggested_name ||= get_valid_name(File.basename(import_from_file, ext).downcase.sanitize)
-          @import_from_file = Tempfile.new([file_name, @ext])
+          @suggested_name ||= get_valid_name(File.basename(import_from_file, @ext).downcase.sanitize)
+          @import_from_file = Tempfile.new([@suggested_name, @ext])
           @import_from_file.write res.read.force_encoding('utf-8')
           @import_from_file.close
         end
