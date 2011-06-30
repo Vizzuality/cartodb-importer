@@ -11,20 +11,15 @@ CartoDB importer is a Ruby gem that makes your life easier when importing data f
 
 To install Ruby dependencies just install `bundler` gem and run the command `bundle install` in your shell.
 
-There are also some dependencies of external Python libraries (WTF!):
+There are also some dependencies of external Python libraries (WTF!). You should install `pip` before:
 
-- Python setup tools: `$ sudo apt-get install python-setuptools`
-    
-- Python GDAL: `$ sudo apt-get install python-gdal`
-    
-- Python Chardet (install from http://chardet.feedparser.org/download/)
-    
-- Python ArgParse (install from http://code.google.com/p/argparse/)
-    
-- Brewery:
+  - In Debian / Ubuntu: `apt-get install python-pip`
+  
+  - In MacosX: `easy_install pip`
+  
+And then run:
 
-    `$ git clone git://github.com/Stiivi/brewery.git`
-    `$ python setup.py install`
+    pip install GDAL==1.8.0 chardet==1.0.1 argparse==1.2.1 brewery==0.6
 
 ## How to use it? ##
 
@@ -57,8 +52,6 @@ CartoDB Importer has a suite of specs which define its specification. To run thi
     CREATE DATABASE cartodb_importer_test
     WITH TEMPLATE = template_postgis
     OWNER = postgres
-    ENCODING = 'UTF8'
-    CONNECTION LIMIT=-1
 
 Then, to run the specs just run this command:
 
