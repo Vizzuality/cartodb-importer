@@ -29,6 +29,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "builder"
   
   s.add_development_dependency 'rspec'
+  s.add_development_dependency 'rspec-core'
   s.add_development_dependency 'mocha'
   s.add_development_dependency "ruby-debug19"
 end
