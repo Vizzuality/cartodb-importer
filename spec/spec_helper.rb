@@ -1,6 +1,11 @@
 # coding: UTF-8
 
-Dir[File.expand_path("spec/support/**/*.rb")].each {|f| require f}
+require 'rubygems'
+require 'bundler'
+Bundler.setup
+require 'sequel'
+
+require File.expand_path("../support/database_connection", __FILE__)
 
 RSpec.configure do |config|
   config.mock_with :mocha

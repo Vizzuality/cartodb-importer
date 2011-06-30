@@ -1,7 +1,7 @@
 # coding: UTF-8
 
 require 'spec_helper'
-require File.expand_path("../cartodb-importer/lib/cartodb-importer")
+require File.expand_path("../../lib/cartodb-importer", __FILE__)
 
 describe CartoDB::Importer do
   it "should raise an error if :import_from_file option is blank" do
