@@ -11,7 +11,7 @@ describe CartoDB::Importer do
   end
   
   it "should get the name from the options" do
-    importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/clubbing.csv"),
+    importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/clubbing.csv", __FILE__),
                                      :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                      :host => 'localhost', :port => 5432, :suggested_name => 'prefered_name'
     result = importer.import!
@@ -21,7 +21,7 @@ describe CartoDB::Importer do
   end
   
   it "should remove the table from the database if an exception happens" do
-    options = { :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/empty.csv"),
+    options = { :import_from_file => File.expand_path("../support/data/empty.csv", __FILE__),
                 :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                 :host => 'localhost', :port => 5432 }
     importer = CartoDB::Importer.new options
@@ -37,13 +37,13 @@ describe CartoDB::Importer do
   end
   
   it "should keep existing tables when trying to import a new one with the same name as an existing one and fails" do
-    importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/clubbing.csv"),
+    importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/clubbing.csv", __FILE__),
                                      :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                      :host => 'localhost', :port => 5432, :suggested_name => 'testing'
     result = importer.import!
     result.import_type.should == '.csv'
     
-    options = { :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/empty.csv"),
+    options = { :import_from_file => File.expand_path("../support/data/empty.csv", __FILE__),
                 :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                 :host => 'localhost', :port => 5432, :suggested_name => "testing" }
     importer = CartoDB::Importer.new options
@@ -59,7 +59,7 @@ describe CartoDB::Importer do
   end
   
   it "should suggest a new table name of the format _n if the previous table exists" do
-    importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/clubbing.csv"),
+    importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/clubbing.csv", __FILE__),
                                      :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                      :host => 'localhost', :port => 5432, :suggested_name => 'prefered_name'
     result = importer.import!
@@ -67,7 +67,7 @@ describe CartoDB::Importer do
     result.rows_imported.should == 2003
     result.import_type.should == '.csv'
 
-    importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/clubbing.csv"),
+    importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/clubbing.csv", __FILE__),
                                      :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                      :host => 'localhost', :port => 5432, :suggested_name => 'prefered_name'
     result = importer.import!
@@ -78,7 +78,7 @@ describe CartoDB::Importer do
   
   describe "#ZIP" do
     it "should import CSV even from a ZIP file" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/pino.zip"),
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/pino.zip", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result = importer.import!
@@ -88,7 +88,7 @@ describe CartoDB::Importer do
     end
 
     it "should import CSV even from a ZIP file with the given name" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/pino.zip"),
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/pino.zip", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432, :suggested_name => "table123"
       result = importer.import!
@@ -100,7 +100,7 @@ describe CartoDB::Importer do
 
   describe "#CSV" do
     it "should import a CSV file in the given database in a table named like the file" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/clubbing.csv"),
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/clubbing.csv", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result = importer.import!
@@ -110,7 +110,7 @@ describe CartoDB::Importer do
     end
     
     it "should import Food Security Aid Map_projects.csv" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/Food Security Aid Map_projects.csv"),
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/Food Security Aid Map_projects.csv", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result = importer.import!
@@ -120,7 +120,7 @@ describe CartoDB::Importer do
     end
 
     it "should import world_heritage_list.csv" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/world_heritage_list.csv"),
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/world_heritage_list.csv", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result = importer.import!
@@ -133,7 +133,7 @@ describe CartoDB::Importer do
   
   describe "#XLSX" do
     it "should import a XLSX file in the given database in a table named like the file" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/ngos.xlsx"),
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/ngos.xlsx", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result = importer.import!
@@ -145,7 +145,7 @@ describe CartoDB::Importer do
   
   describe "#SHP" do
     it "should import a SHP file in the given database in a table named like the file" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/EjemploVizzuality.zip"),
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/EjemploVizzuality.zip", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result = importer.import!
@@ -155,7 +155,7 @@ describe CartoDB::Importer do
     end
     
     it "should import SHP file TM_WORLD_BORDERS_SIMPL-0.3.zip" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/TM_WORLD_BORDERS_SIMPL-0.3.zip"),
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/TM_WORLD_BORDERS_SIMPL-0.3.zip", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result = importer.import!
@@ -165,7 +165,7 @@ describe CartoDB::Importer do
     end
 
     it "should import SHP file TM_WORLD_BORDERS_SIMPL-0.3.zip but set the given name" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../cartodb-importer/spec/support/data/TM_WORLD_BORDERS_SIMPL-0.3.zip"),
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/TM_WORLD_BORDERS_SIMPL-0.3.zip", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432, :suggested_name => 'borders'
       result = importer.import!
