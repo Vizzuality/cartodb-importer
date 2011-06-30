@@ -1,7 +1,5 @@
 # coding: UTF-8
 
-require 'ruby-debug'
-
 module CartoDB
   class Importer
     RESERVED_COLUMN_NAMES = %W{ oid tableoid xmin cmin xmax cmax ctid }
