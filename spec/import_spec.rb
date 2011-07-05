@@ -128,6 +128,16 @@ describe CartoDB::Importer do
       result.rows_imported.should == 937
       result.import_type.should == '.csv'
     end
+    
+    it "should import cp_vizzuality_export.csv" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/cp_vizzuality_export.csv", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      result.name.should == 'cp_vizzuality_export'
+      result.rows_imported.should == 19235
+      result.import_type.should == '.csv'
+    end
 
   end
   
