@@ -8,7 +8,7 @@ module CartoDB
     class << self
       attr_accessor :debug
     end
-    @@debug = false
+    @@debug = true
     
     attr_accessor :import_from_file, :suggested_name,
                   :ext, :db_configuration, :db_connection
