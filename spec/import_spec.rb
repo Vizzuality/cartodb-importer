@@ -183,5 +183,16 @@ describe CartoDB::Importer do
       result.rows_imported.should == 246
       result.import_type.should == '.shp'
     end
+    
+    it "should import SHP file Eco_Level_III_US.zip" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/Eco_Level_III_US.zip", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432, :suggested_name => 'borders'
+      result = importer.import!
+      result.name.should == 'borders'
+      result.rows_imported.should == 246
+      result.import_type.should == '.shp'
+    end    
+    
   end
 end
