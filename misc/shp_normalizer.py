@@ -7,6 +7,7 @@ from osgeo import osr
 from urllib import urlencode
 from urllib2 import urlopen
 import json
+import subprocess
 
 shp_file = sys.argv[1]
 name = sys.argv[2]
@@ -54,4 +55,4 @@ encoding = detector.result["encoding"]
 if encoding=="ascii":
     encoding="LATIN1"
 
-print "`which shp2pgsql` -s %s -i -I -W %s %s %s" %(srid,encoding,shp_file,name)
+print " -s %s -i -I -W %s %s %s" %(srid,encoding,shp_file,name)

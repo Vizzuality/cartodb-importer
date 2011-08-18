@@ -144,16 +144,24 @@ module CartoDB
           :import_type => import_type
         })
       elsif @ext == '.shp'
+        # FIXME: which shp2pgsql does not found the executable cause /usr/lib/postgresql/9.0/bin is not
+        # in the path when running inside the application
+        shp2pgsql_bin_path = "/usr/lib/postgresql/9.0/bin/shp2pgsql"
+        
         host = @db_configuration[:host] ? "-h #{@db_configuration[:host]}" : ""
         port = @db_configuration[:port] ? "-p #{@db_configuration[:port]}" : ""
         @suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize) unless @force_name
         random_table_name = "importing_#{Time.now.to_i}_#{@suggested_name}"
-        command = `#{python_bin_path} -Wignore #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{random_table_name}`
-        if command.strip.blank?
-          raise "Error running python shp_normalizer script: \`which python\` #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{@suggested_name}"
+        
+        normalizer_command = "#{python_bin_path} -Wignore #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{random_table_name}"
+        shp_args_command = `#{normalizer_command}`
+        if shp_args_command.strip.blank?
+          raise "Error running python shp_normalizer script: #{normalizer_command}"
         end
-        log "Running shp2pgsql: #{command.strip} | #{psql_bin_path} #{host} #{port} -U#{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
-        `#{command.strip} 2> /dev/null | #{psql_bin_path} #{host} #{port} -U#{@db_configuration[:username]} -w -d#{@db_configuration[:database]} &> /dev/null`
+        full_shp_command = "#{shp2pgsql_bin_path} #{shp_args_command.strip} | #{psql_bin_path} #{host} #{port} -U#{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
+        log "Running shp2pgsql: #{full_shp_command}"
+        %x[#{full_shp_command}]
+        
         @db_connection.run("CREATE TABLE #{@suggested_name} AS SELECT * FROM #{random_table_name}")
         @db_connection.run("DROP TABLE #{random_table_name}")
         @table_created = true
