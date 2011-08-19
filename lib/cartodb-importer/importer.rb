@@ -144,9 +144,7 @@ module CartoDB
           :import_type => import_type
         })
       elsif @ext == '.shp'
-        # FIXME: which shp2pgsql does not found the executable cause /usr/lib/postgresql/9.0/bin is not
-        # in the path when running inside the application
-        shp2pgsql_bin_path = "/usr/lib/postgresql/9.0/bin/shp2pgsql"
+        shp2pgsql_bin_path = `which shp2pgsql`.strip
         
         host = @db_configuration[:host] ? "-h #{@db_configuration[:host]}" : ""
         port = @db_configuration[:port] ? "-p #{@db_configuration[:port]}" : ""
