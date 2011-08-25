@@ -19,7 +19,7 @@ There are also some dependencies of external Python libraries (WTF!). You should
   
 And then run:
 
-    pip install GDAL>1.8.0 chardet==1.0.1 argparse==1.2.1 brewery==0.6
+    pip install GDAL chardet==1.0.1 argparse==1.2.1 brewery==0.6
 
 ## How to use it? ##
 
