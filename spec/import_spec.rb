@@ -184,4 +184,15 @@ describe CartoDB::Importer do
       result.import_type.should == '.shp'
     end
   end
+  describe "#GTIFF" do
+    it "should import a GTIFF file in the given database in a table named like the file" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/GLOBAL_ELEVATION_SIMPLE.zip", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      #result.name.should == 'global_elevation_simple'
+      #result.rows_imported.should == 11
+      #result.import_type.should == '.tif'
+    end
+  end  
 end

@@ -3,7 +3,7 @@
 module CartoDB
   class Importer
     RESERVED_COLUMN_NAMES = %W{ oid tableoid xmin cmin xmax cmax ctid }
-    SUPPORTED_FORMATS = %W{ .csv .shp .ods .xls .xlsx }
+    SUPPORTED_FORMATS = %W{ .csv .shp .ods .xls .xlsx .tif .tiff }
     
     class << self
       attr_accessor :debug
@@ -143,7 +143,8 @@ module CartoDB
           :rows_imported => rows_imported,
           :import_type => import_type
         })
-      elsif @ext == '.shp'
+      end
+      if @ext == '.shp'
         shp2pgsql_bin_path = `which shp2pgsql`.strip
         
         host = @db_configuration[:host] ? "-h #{@db_configuration[:host]}" : ""
@@ -173,6 +174,33 @@ module CartoDB
           :rows_imported => rows_imported,
           :import_type => import_type
         })
+      end
+      if %W{ .tif .tiff }.include?(@ext)  
+        log "Importing raster file: #{path}"
+        raster2pgsql_bin_path = `which raster2pgsql.py`.strip
+        
+        host = @db_configuration[:host] ? "-h #{@db_configuration[:host]}" : ""
+        port = @db_configuration[:port] ? "-p #{@db_configuration[:port]}" : ""
+        @suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize) unless @force_name
+        random_table_name = "importing_#{Time.now.to_i}_#{@suggested_name}"
+        
+        gdal_command = "#{python_bin_path} -Wignore #{File.expand_path("../../../misc/srid_from_gdal.py", __FILE__)} #{path}"
+        rast_srid_command = `#{gdal_command}`
+        
+        log "SRID : #{rast_srid_command}"
+        
+        blocksize = "180x180"
+        full_rast_command = "#{raster2pgsql_bin_path} -I -s #{rast_srid_command.strip} -k #{blocksize} -t  #{random_table_name} -r #{path} | #{psql_bin_path} #{host} #{port} -U#{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
+        log "Running raster2pgsql: #{full_rast_command}"
+        %x[#{full_rast_command}]
+        
+        @db_connection.run("CREATE TABLE #{@suggested_name} AS SELECT * FROM #{random_table_name}")
+        @db_connection.run("DROP TABLE #{random_table_name}")
+        @table_created = true
+        
+        entries.each{ |e| FileUtils.rm_rf(e) } if entries.any?
+        rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
+        @import_from_file.unlink
       end
     rescue => e
       log "====================="

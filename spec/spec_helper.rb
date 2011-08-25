@@ -12,7 +12,7 @@ RSpec.configure do |config|
   
   config.before(:each) do
     CartoDB::DatabaseConnection.connection.tables.each do |t| 
-      next if %W{ geography_columns geometry_columns spatial_ref_sys }.include?(t.to_s)
+      next if %W{ raster_columns raster_overviews geography_columns geometry_columns spatial_ref_sys }.include?(t.to_s)
       CartoDB::DatabaseConnection.connection.drop_table(t)
     end
   end
