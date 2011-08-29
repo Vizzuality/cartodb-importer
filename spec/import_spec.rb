@@ -190,9 +190,9 @@ describe CartoDB::Importer do
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result = importer.import!
-      #result.name.should == 'global_elevation_simple'
-      #result.rows_imported.should == 11
-      #result.import_type.should == '.tif'
+      result.name.should == 'global_elevation_simple_tif'
+      result.rows_imported.should == 1500
+      result.import_type.should == '.tif'
     end
   end  
 end
