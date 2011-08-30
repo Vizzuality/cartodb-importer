@@ -111,38 +111,24 @@ module CartoDB
       end
       
       if @ext == '.csv'
-        old_path = path
-
-        copy = Tempfile.new([@suggested_name, @ext])
-        copy.close
-        path = copy.path
+        ogr2ogr_bin_path = `which ogr2ogr`.strip
+        ogr2ogr_command = %Q{#{ogr2ogr_bin_path} -f "PostgreSQL" PG:"host=#{@db_configuration[:host]} port=#{@db_configuration[:port]} user=#{@db_configuration[:username]} dbname=#{@db_configuration[:database]}" #{path} -nln #{@suggested_name}}
         
-        command = %Q{#{python_bin_path} -Wignore #{File.expand_path("../../../misc/csv_normalizer.py", __FILE__)} #{old_path} > #{path}}
-        `#{command}`
-        schema = guess_schema(path)
-        host = @db_configuration[:host] ? "-h #{@db_configuration[:host]}" : ""
-        port = @db_configuration[:port] ? "-p #{@db_configuration[:port]}" : ""
+        output = `#{ogr2ogr_command} &> /dev/null`
         
-        @db_connection.run("CREATE TABLE #{@suggested_name} (#{schema.join(', ')})")
-        @table_created = true
-        command = "copy #{@suggested_name} from STDIN WITH (HEADER true, FORMAT 'csv')"
-        import_csv_command = %Q{cat #{path} | #{psql_bin_path} #{host} #{port} -U#{@db_configuration[:username]} -w -d #{@db_configuration[:database]} -c"#{command}"}
-        log "Importing CSV. Executing command: " + import_csv_command
-        output = `#{import_csv_command} &> /dev/null`
-        log ">> #{output}"
-      
         # Check if the file had data, if not rise an error because probably something went wrong
         if @db_connection["SELECT * from #{@suggested_name} LIMIT 1"].first.nil?
           raise "Empty table"
-        end        
+        end
         FileUtils.rm_rf(path)
         rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
-        
+
         return OpenStruct.new({
           :name => @suggested_name, 
           :rows_imported => rows_imported,
           :import_type => import_type
-        })
+          })
+        
       end
       if @ext == '.shp'
         shp2pgsql_bin_path = `which shp2pgsql`.strip
