@@ -43,17 +43,17 @@ describe CartoDB::Exporter do
     it "should export a SHP file set as a ZIP to the /tmp directory named with a unique string" do
 
       importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/EjemploVizzuality.zip", __FILE__),
-                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
-                                       :host => 'localhost', :port => 5432
+                                         :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                         :host => 'localhost', :port => 5432
       run = importer.import!
 
-      exporter = CartoDB::Exporter.new :export_to_file => 'EjemploVizzuality', 
+      exporter = CartoDB::Exporter.new :export_to_file => 'vizzuality_shp', 
                                        :type => 'shp',
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
 
       result = exporter.export!
-      result.name.should == 'EjemploVizzuality'
+      result.name.should == 'vizzuality_shp'
       result.import_type.should == '.shp'
     end
   end

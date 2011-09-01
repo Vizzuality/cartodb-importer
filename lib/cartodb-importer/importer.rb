@@ -91,6 +91,7 @@ module CartoDB
       end
       
       import_type = @ext
+      @suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize) unless @force_name
       
       # These types of files are converted to CSV
       if %W{ .xls .xlsx .ods }.include?(@ext)
@@ -131,34 +132,35 @@ module CartoDB
         
       end
       if @ext == '.shp'
-        shp2pgsql_bin_path = `which shp2pgsql`.strip
         
+        shp2pgsql_bin_path = `which shp2pgsql`.strip
+
         host = @db_configuration[:host] ? "-h #{@db_configuration[:host]}" : ""
         port = @db_configuration[:port] ? "-p #{@db_configuration[:port]}" : ""
         @suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize) unless @force_name
         random_table_name = "importing_#{Time.now.to_i}_#{@suggested_name}"
-        
+
         normalizer_command = "#{python_bin_path} -Wignore #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{random_table_name}"
         shp_args_command = `#{normalizer_command}`
         if shp_args_command.strip.blank?
-          raise "Error running python shp_normalizer script: #{normalizer_command}"
+        raise "Error running python shp_normalizer script: #{normalizer_command}"
         end
-        full_shp_command = "#{shp2pgsql_bin_path} #{shp_args_command.strip} | #{psql_bin_path} #{host} #{port} -U#{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
+        full_shp_command = "#{shp2pgsql_bin_path} #{shp_args_command.strip} | #{psql_bin_path} #{host} #{port} -U #{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
         log "Running shp2pgsql: #{full_shp_command}"
         %x[#{full_shp_command}]
-        
+
         @db_connection.run("CREATE TABLE #{@suggested_name} AS SELECT * FROM #{random_table_name}")
         @db_connection.run("DROP TABLE #{random_table_name}")
         @table_created = true
-        
+
         entries.each{ |e| FileUtils.rm_rf(e) } if entries.any?
         rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
         @import_from_file.unlink
-        
+
         return OpenStruct.new({
-          :name => @suggested_name, 
-          :rows_imported => rows_imported,
-          :import_type => import_type
+        :name => @suggested_name, 
+        :rows_imported => rows_imported,
+        :import_type => import_type
         })
       end
       if %W{ .tif .tiff }.include?(@ext)  
