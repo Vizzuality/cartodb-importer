@@ -91,8 +91,6 @@ module CartoDB
       end
       
       import_type = @ext
-      @suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize) unless @force_name
-      
       # These types of files are converted to CSV
       if %W{ .xls .xlsx .ods }.include?(@ext)
         new_path = "/tmp/#{@suggested_name}.csv"
