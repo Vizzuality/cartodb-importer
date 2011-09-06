@@ -29,32 +29,25 @@ describe CartoDB::Importer do
       importer.import!
     }.should raise_error
     
-    db_configuration = options.slice(:database, :username, :password, :host, :port)
-    db_configuration[:port] ||= 5432
-    db_configuration[:host] ||= '127.0.0.1'
-    db_connection = Sequel.connect("postgres://#{db_configuration[:username]}:#{db_configuration[:password]}@#{db_configuration[:host]}:#{db_configuration[:port]}/#{db_configuration[:database]}")
+    db_connection = Sequel.connect("postgres://#{options[:username]}:#{options[:password]}@#{options[:host]}:#{options[:port]}/#{options[:database]}")
     db_connection.tables.should_not include(:empty)
   end
   
   it "should keep existing tables when trying to import a new one with the same name as an existing one and fails" do
-    importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/clubbing.csv", __FILE__),
-                                     :database => "cartodb_importer_test", :username => 'postgres', :password => '',
-                                     :host => 'localhost', :port => 5432, :suggested_name => 'testing'
-    result = importer.import!
-    result.import_type.should == '.csv'
-    
     options = { :import_from_file => File.expand_path("../support/data/empty.csv", __FILE__),
                 :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                 :host => 'localhost', :port => 5432, :suggested_name => "testing" }
-    importer = CartoDB::Importer.new options
+                
+    importer = CartoDB::Importer.new(options.merge(:import_from_file => File.expand_path("../support/data/clubbing.csv", __FILE__)))
+    result = importer.import!
+    result.import_type.should == '.csv'
+    
+    importer = CartoDB::Importer.new(options)
     lambda { 
       importer.import!
     }.should raise_error
 
-    db_configuration = options.slice(:database, :username, :password, :host, :port)
-    db_configuration[:port] ||= 5432
-    db_configuration[:host] ||= '127.0.0.1'
-    db_connection = Sequel.connect("postgres://#{db_configuration[:username]}:#{db_configuration[:password]}@#{db_configuration[:host]}:#{db_configuration[:port]}/#{db_configuration[:database]}")
+    db_connection = Sequel.connect("postgres://#{options[:username]}:#{options[:password]}@#{options[:host]}:#{options[:port]}/#{options[:database]}")
     db_connection.tables.should include(:testing)
   end
   
@@ -96,6 +89,23 @@ describe CartoDB::Importer do
       result.rows_imported.should == 4
       result.import_type.should == '.csv'
     end
+  end
+
+  it "should sanitize column names" do
+    options = { :import_from_file => File.expand_path("../support/data/twitters.csv", __FILE__),
+                                     :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                     :host => 'localhost', :port => 5432, :suggested_name => 'prefered_name' }
+    importer = CartoDB::Importer.new(options)
+    result = importer.import!
+    result.name.should == 'prefered_name'
+    result.rows_imported.should == 7
+    result.import_type.should == '.csv'
+    
+    db_connection = Sequel.connect("postgres://#{options[:username]}:#{options[:password]}@#{options[:host]}:#{options[:port]}/#{options[:database]}")
+    db_connection.tables.should include(:prefered_name)
+    columns = db_connection.schema(:prefered_name).map{|s| s[0].to_s}
+    expected_columns = ["url","login","country","followers_count"]
+    (columns & expected_columns).sort.should == expected_columns.sort
   end
 
   describe "#CSV" do
