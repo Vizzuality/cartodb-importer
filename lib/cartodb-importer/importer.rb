@@ -119,6 +119,9 @@ module CartoDB
         if @db_connection["SELECT * from #{@suggested_name} LIMIT 1"].first.nil?
           raise "Empty table"
         end
+        
+        @table_created = true
+        
         FileUtils.rm_rf(path)
         rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
 
@@ -150,7 +153,7 @@ module CartoDB
         @db_connection.run("CREATE TABLE #{@suggested_name} AS SELECT * FROM #{random_table_name}")
         @db_connection.run("DROP TABLE #{random_table_name}")
         @table_created = true
-
+        
         entries.each{ |e| FileUtils.rm_rf(e) } if entries.any?
         rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
         @import_from_file.unlink
@@ -171,23 +174,23 @@ module CartoDB
         random_table_name = "importing_#{Time.now.to_i}_#{@suggested_name}"
         
         gdal_command = "#{python_bin_path} -Wignore #{File.expand_path("../../../misc/srid_from_gdal.py", __FILE__)} #{path}"
-        rast_srid_command = `#{gdal_command}`
+        rast_srid_command = `#{gdal_command}`.strip
         
         log "SRID : #{rast_srid_command}"
         
         blocksize = "180x180"
-        full_rast_command = "#{raster2pgsql_bin_path} -I -s #{rast_srid_command.strip} -k #{blocksize} -t  #{random_table_name} -r #{path} | #{psql_bin_path} #{host} #{port} -U#{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
-        log "Running raster2pgsql: #{full_rast_command}"
+        full_rast_command = "#{raster2pgsql_bin_path} -I -s #{rast_srid_command.strip} -k #{blocksize} -t  #{random_table_name} -r #{path} | #{psql_bin_path} #{host} #{port} -U #{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
+        log "Running raster2pgsql: #{raster2pgsql_bin_path}  #{full_rast_command}"
         %x[#{full_rast_command}]
         
         @db_connection.run("CREATE TABLE #{@suggested_name} AS SELECT * FROM #{random_table_name}")
         @db_connection.run("DROP TABLE #{random_table_name}")
-        @table_created = true
         
         entries.each{ |e| FileUtils.rm_rf(e) } if entries.any?
         rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
         @import_from_file.unlink
         
+        @table_created = true
         
         entries.each{ |e| FileUtils.rm_rf(e) } if entries.any?
         rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
@@ -205,7 +208,7 @@ module CartoDB
       log $!
       log e.backtrace
       log "====================="
-      if !@table_created.nil?
+      if @table_created == nil
         @db_connection.drop_table(@suggested_name)
       end
       raise e

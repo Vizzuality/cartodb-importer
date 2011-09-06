@@ -16,7 +16,7 @@ describe CartoDB::Importer do
                                      :host => 'localhost', :port => 5432, :suggested_name => 'prefered_name'
     result = importer.import!
     result.name.should == 'prefered_name'
-    result.rows_imported.should == 2003
+    result.rows_imported.should == 1998
     result.import_type.should == '.csv'
   end
   
@@ -64,7 +64,7 @@ describe CartoDB::Importer do
                                      :host => 'localhost', :port => 5432, :suggested_name => 'prefered_name'
     result = importer.import!
     result.name.should == 'prefered_name'
-    result.rows_imported.should == 2003
+    result.rows_imported.should == 1998
     result.import_type.should == '.csv'
 
     importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/clubbing.csv", __FILE__),
@@ -72,7 +72,7 @@ describe CartoDB::Importer do
                                      :host => 'localhost', :port => 5432, :suggested_name => 'prefered_name'
     result = importer.import!
     result.name.should == 'prefered_name_2'
-    result.rows_imported.should == 2003
+    result.rows_imported.should == 1998
     result.import_type.should == '.csv'
   end
   
