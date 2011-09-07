@@ -55,4 +55,4 @@ encoding = detector.result["encoding"]
 if encoding=="ascii":
     encoding="LATIN1"
 
-print " -s %s -e -i -I -W %s %s %s" %(srid,encoding,shp_file,name)
+print " -r %s -s 4326 -e -i -I -g the_geom -W %s %s %s" %(srid,encoding,shp_file,name)
