@@ -69,6 +69,40 @@ describe CartoDB::Importer do
     result.import_type.should == '.csv'
   end
   
+  it "should sanitize column names" do
+    options = { :import_from_file => File.expand_path("../support/data/twitters.csv", __FILE__),
+                                     :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                     :host => 'localhost', :port => 5432, :suggested_name => 'prefered_name' }
+    importer = CartoDB::Importer.new(options)
+    result = importer.import!
+    result.name.should == 'prefered_name'
+    result.rows_imported.should == 7
+    result.import_type.should == '.csv'
+    
+    db_connection = Sequel.connect("postgres://#{options[:username]}:#{options[:password]}@#{options[:host]}:#{options[:port]}/#{options[:database]}")
+    db_connection.tables.should include(:prefered_name)
+    columns = db_connection.schema(:prefered_name).map{|s| s[0].to_s}
+    expected_columns = ["url","login","country","followers_count"]
+    (columns & expected_columns).sort.should == expected_columns.sort
+  end
+  
+  it "should escape reserved column names" do
+    options = { :import_from_file => File.expand_path("../support/data/reserved_columns.csv", __FILE__),
+                                     :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                     :host => 'localhost', :port => 5432, :suggested_name => 'prefered_name' }
+    importer = CartoDB::Importer.new(options)
+    result = importer.import!
+    result.name.should == 'prefered_name'
+    result.rows_imported.should == 7
+    result.import_type.should == '.csv'
+    
+    db_connection = Sequel.connect("postgres://#{options[:username]}:#{options[:password]}@#{options[:host]}:#{options[:port]}/#{options[:database]}")
+    db_connection.tables.should include(:prefered_name)
+    columns = db_connection.schema(:prefered_name).map{|s| s[0].to_s}
+    expected_columns = ["url","login","country","followers_count", "_xmin"]
+    (columns & expected_columns).sort.should == expected_columns.sort
+  end
+  
   describe "#ZIP" do
     it "should import CSV even from a ZIP file" do
       importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/pino.zip", __FILE__),
@@ -89,23 +123,6 @@ describe CartoDB::Importer do
       result.rows_imported.should == 4
       result.import_type.should == '.csv'
     end
-  end
-
-  it "should sanitize column names" do
-    options = { :import_from_file => File.expand_path("../support/data/twitters.csv", __FILE__),
-                                     :database => "cartodb_importer_test", :username => 'postgres', :password => '',
-                                     :host => 'localhost', :port => 5432, :suggested_name => 'prefered_name' }
-    importer = CartoDB::Importer.new(options)
-    result = importer.import!
-    result.name.should == 'prefered_name'
-    result.rows_imported.should == 7
-    result.import_type.should == '.csv'
-    
-    db_connection = Sequel.connect("postgres://#{options[:username]}:#{options[:password]}@#{options[:host]}:#{options[:port]}/#{options[:database]}")
-    db_connection.tables.should include(:prefered_name)
-    columns = db_connection.schema(:prefered_name).map{|s| s[0].to_s}
-    expected_columns = ["url","login","country","followers_count"]
-    (columns & expected_columns).sort.should == expected_columns.sort
   end
 
   describe "#CSV" do
@@ -144,7 +161,25 @@ describe CartoDB::Importer do
       result.name.should == 'cp_vizzuality_export'
       result.rows_imported.should == 19235
       result.import_type.should == '.csv'
-    end    
+    end
+    it "should import estaciones.csv" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/estaciones.csv", __FILE__),
+                                     :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                     :host => 'localhost', :port => 5432
+      result = importer.import!
+      result.name.should == 'estaciones'
+      result.rows_imported.should == 29
+      result.import_type.should == '.csv'
+    end
+    it "should import estaciones2.csv" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/estaciones2.csv", __FILE__),
+                                     :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                     :host => 'localhost', :port => 5432
+      result = importer.import!
+      result.name.should == 'estaciones2'
+      result.rows_imported.should == 29
+      result.import_type.should == '.csv'
+    end
   end
   
   describe "#XLSX" do
