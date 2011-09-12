@@ -150,7 +150,7 @@ module CartoDB
         random_table_name = "importing_#{Time.now.to_i}_#{@suggested_name}"
 
         normalizer_command = "#{python_bin_path} -Wignore #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{random_table_name}"
-        shp_args_command = `#{normalizer_command}`
+        shp_args_command = `#{normalizer_command}` 
         if shp_args_command.strip.blank?
         raise "Error running python shp_normalizer script: #{normalizer_command}"
         end
@@ -159,7 +159,7 @@ module CartoDB
         %x[#{full_shp_command}]
 
         @db_connection.run("CREATE TABLE #{@suggested_name} AS SELECT * FROM #{random_table_name}")
-        @db_connection.run("DROP TABLE #{random_table_name}")
+        #@db_connection.run("DROP TABLE #{random_table_name}")
         @table_created = true
         
         entries.each{ |e| FileUtils.rm_rf(e) } if entries.any?
