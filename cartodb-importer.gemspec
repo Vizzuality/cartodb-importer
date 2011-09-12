@@ -6,8 +6,8 @@ Gem::Specification.new do |s|
   s.name        = "cartodb-importer"
   s.version     = CartoDB::Importer::VERSION
   s.platform    = Gem::Platform::RUBY
-  s.authors     = ["Fernando Blat"]
-  s.email       = ["ferblape@gmail.com"]
+  s.authors     = ["Fernando Blat", "Andrew Hill", "Javier de la Torre"]
+  s.email       = ["andrew@vizzuality.com"]
   s.homepage    = ""
   s.summary     = %q{Import CSV, SHP, and other files with data into a PostgreSQL table}
   s.description = %q{Import CSV, SHP, and other files with data into a PostgreSQL table}
