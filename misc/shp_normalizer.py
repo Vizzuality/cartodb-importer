@@ -37,7 +37,7 @@ if os.path.isfile(prj_file):
     jres = json.loads(webres.read())
     if jres['codes']:
       srid = int(jres['codes'][0]['code'])
-
+    
 #Try to detect the encoding
 dbf = open(dbf_file, 'rb')
 db = dbfUtils.dbfreader(dbf)
@@ -53,4 +53,4 @@ encoding = detector.result["encoding"]
 if encoding=="ascii":
     encoding="LATIN1"
 
-print " -r %s -s 4326 -e -i -I -g the_geom -W %s %s %s" %(srid,encoding,shp_file,name)
+print "%s,%s,%s,%s" %(srid,encoding,shp_file,name)
