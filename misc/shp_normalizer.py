@@ -15,7 +15,7 @@ name = sys.argv[2]
 dbf_file = shp_file[0:-4] + '.dbf'
 prj_file = shp_file[0:-4] + '.prj'
 
-SRID = -1
+srid = 4326
 #Try detecting the SRID
 if os.path.isfile(prj_file):
   prj_filef = open(prj_file, 'r')
