@@ -112,20 +112,6 @@ module CartoDB
       
       if @ext == '.csv'
         
-        log "Ensuring table name uniquenes"
-        existing_names = @db_connection["select relname from pg_stat_user_tables WHERE schemaname='public'"].map(:relname)
-        ftest = ""
-        testn = 0
-        uniname = @suggested_name
-        log "#{existing_names}"
-        log "#{@suggested_name}"
-        while true==existing_names.include?("#{uniname}")
-          uniname = "#{@suggested_name}_#{testn}"
-          log "#{uniname}"
-          testn = testn + 1
-        end
-        @suggested_name = uniname
-        
         ogr2ogr_bin_path = `which ogr2ogr`.strip
         ogr2ogr_command = %Q{#{ogr2ogr_bin_path} -f "PostgreSQL" PG:"host=#{@db_configuration[:host]} port=#{@db_configuration[:port]} user=#{@db_configuration[:username]} dbname=#{@db_configuration[:database]}" #{path} -nln #{@suggested_name}}
         
@@ -337,17 +323,14 @@ module CartoDB
     end
     
     def get_valid_name(name)
-      candidates = @db_connection.tables.map{ |t| t.to_s }.select{ |t| t.match(/^#{name}/) }
-      if candidates.any?
-        max_candidate = candidates.max
-        if max_candidate =~ /(.+)_(\d+)$/
-          return $1 + "_#{$2.to_i +  1}"
-        else
-          return max_candidate + "_2"
-        end
-      else
-        return name
+      existing_names = @db_connection["select relname from pg_stat_user_tables WHERE schemaname='public' and relname ilike '#{name}%'"].map(:relname)
+      testn = 1
+      uniname = name
+      while true==existing_names.include?("#{uniname}")
+        uniname = "#{name}_#{testn}"
+        testn = testn + 1
       end
+      return uniname
     end
     
     def log(str)

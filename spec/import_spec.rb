@@ -177,11 +177,19 @@ describe CartoDB::Importer do
     it "should import estaciones2.csv" do
       importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/estaciones2.csv", __FILE__),
                                      :database => "cartodb_importer_test", :username => 'postgres', :password => '',
-                                     :host => 'localhost', :port => 5432
+                                     :host => 'localhost', :port => 5432, :suggested_name => 'estaciones2'
       result = importer.import!
       result.name.should == 'estaciones2'
       result.rows_imported.should == 30
       result.import_type.should == '.csv'
+      
+      importer2 = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/estaciones2.csv", __FILE__),
+                                     :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                     :host => 'localhost', :port => 5432, :suggested_name => 'estaciones2'
+      result2 = importer2.import!
+      result2.name.should == 'estaciones2_0'
+      result2.rows_imported.should == 30
+      result2.import_type.should == '.csv'
     end
   end
   
@@ -263,7 +271,7 @@ describe CartoDB::Importer do
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result2 = importer.import!
-      result2.name.should == 'tm_world_borders_simpl_0_4'
+      result2.name.should == 'tm_world_borders_simpl_0_3_0'
       #result.rows_imported.should == 4365
       result2.import_type.should == '.shp'
     end
