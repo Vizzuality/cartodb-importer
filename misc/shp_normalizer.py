@@ -54,4 +54,4 @@ encoding = detector.result["encoding"]
 if encoding=="ascii":
     encoding="LATIN1"
 
-print "%s,%s,%s,%s" %(srid,encoding,shp_file,name)
+print "%s,%s,%s,%s" % (srid,encoding,shp_file,name)
