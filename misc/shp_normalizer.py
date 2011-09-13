@@ -39,19 +39,21 @@ if os.path.isfile(prj_file):
     if jres['codes']:
       srid = int(jres['codes'][0]['code'])
     
-#Try to detect the encoding
-dbf = open(dbf_file, 'rb')
-db = dbfUtils.dbfreader(dbf)
-
-detector = UniversalDetector()
-for row in db:
-  detector.feed(str(row))
-  if detector.done: break
-detector.close()
-dbf.close()
-
-encoding = detector.result["encoding"]
-if encoding=="ascii":
-    encoding="LATIN1"
+try:
+    #Try to detect the encoding
+    dbf = open(dbf_file, 'rb')
+    db = dbfUtils.dbfreader(dbf)
+    detector = UniversalDetector()
+    for row in db:
+      detector.feed(str(row))
+      if detector.done: break
+    detector.close()
+    dbf.close()
+    encoding = detector.result["encoding"]
+    if encoding=="ascii":
+        encoding="LATIN1"
+except:
+    #if encoding detection fails, attempt default UTF8
+    encoding = "UTF8"
 
 print "%s,%s,%s,%s" % (srid,encoding,shp_file,name)

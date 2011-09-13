@@ -89,8 +89,9 @@ module CartoDB
           entry.extract("/tmp/#{name}")
         end
       end
-      
+        
       import_type = @ext
+      
       # These types of files are converted to CSV
       if %W{ .xls .xlsx .ods }.include?(@ext)
         new_path = "/tmp/#{@suggested_name}.csv"
@@ -146,7 +147,7 @@ module CartoDB
 
         host = @db_configuration[:host] ? "-h #{@db_configuration[:host]}" : ""
         port = @db_configuration[:port] ? "-p #{@db_configuration[:port]}" : ""
-        @suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize) unless @force_name
+        #@suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize) unless @force_name
         random_table_name = "importing_#{Time.now.to_i}_#{@suggested_name}"
         
         normalizer_command = "#{python_bin_path} -Wignore #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{random_table_name}"
@@ -185,7 +186,7 @@ module CartoDB
         
         host = @db_configuration[:host] ? "-h #{@db_configuration[:host]}" : ""
         port = @db_configuration[:port] ? "-p #{@db_configuration[:port]}" : ""
-        @suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize) unless @force_name
+        #@suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize) unless @force_name
         random_table_name = "importing_#{Time.now.to_i}_#{@suggested_name}"
         
         gdal_command = "#{python_bin_path} -Wignore #{File.expand_path("../../../misc/srid_from_gdal.py", __FILE__)} #{path}"

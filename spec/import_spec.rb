@@ -251,13 +251,21 @@ describe CartoDB::Importer do
   end  
   describe "Extended" do
     it "should import 1 SHP file" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../../../vm-cartodb/extended_tests/cua2005index_sp.zip", __FILE__),
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../../../vm-cartodb/extended_tests/kba_lifeweb.zip", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result = importer.import!
-      result.name.should == 'cua2005index_sp_shp'
-      result.rows_imported.should == 4365
+      result.name.should == 'kba_pg'
+      #result.rows_imported.should == 4365
       result.import_type.should == '.shp'
+      
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../../../vm-cartodb/extended_tests/kba_lifeweb.zip", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result2 = importer.import!
+      result2.name.should == 'kba_pg_0'
+      #result.rows_imported.should == 4365
+      result2.import_type.should == '.shp'
     end
     it "should import 2 SHP file" do
       importer = CartoDB::Importer.new :import_from_file => File.expand_path("../../../vm-cartodb/extended_tests/cua2005index_utm.zip", __FILE__),
