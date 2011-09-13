@@ -111,6 +111,21 @@ module CartoDB
       end
       
       if @ext == '.csv'
+        
+        log "Ensuring table name uniquenes"
+        existing_names = @db_connection["select relname from pg_stat_user_tables WHERE schemaname='public'"].map(:relname)
+        ftest = ""
+        testn = 0
+        uniname = @suggested_name
+        log "#{existing_names}"
+        log "#{@suggested_name}"
+        while true==existing_names.include?("#{uniname}")
+          uniname = "#{@suggested_name}_#{testn}"
+          log "#{uniname}"
+          testn = testn + 1
+        end
+        @suggested_name = uniname
+        
         ogr2ogr_bin_path = `which ogr2ogr`.strip
         ogr2ogr_command = %Q{#{ogr2ogr_bin_path} -f "PostgreSQL" PG:"host=#{@db_configuration[:host]} port=#{@db_configuration[:port]} user=#{@db_configuration[:username]} dbname=#{@db_configuration[:database]}" #{path} -nln #{@suggested_name}}
         
