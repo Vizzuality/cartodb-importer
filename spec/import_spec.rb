@@ -205,13 +205,13 @@ describe CartoDB::Importer do
                                        
       importer = CartoDB::Importer.new(options)
       result = importer.import!
-      result.name.should == 'vizzuality_shp'
+      result.name.should == 'vizzuality'
       result.rows_imported.should == 11
       result.import_type.should == '.shp'
       
       db_connection = Sequel.connect("postgres://#{options[:username]}:#{options[:password]}@#{options[:host]}:#{options[:port]}/#{options[:database]}")
-      db_connection.tables.should include(:vizzuality_shp)
-      columns = db_connection.schema(:vizzuality_shp).map{|s| s[0].to_s}
+      db_connection.tables.should include(:vizzuality)
+      columns = db_connection.schema(:vizzuality).map{|s| s[0].to_s}
       
       expected_columns = ["gid", "subclass", "x", "y", "length", "area", "angle", "name", 
         "pid", "lot_navteq", "version_na", "vitesse_sp", "id", "nombrerest", "tipocomida", "the_geom"]
@@ -223,7 +223,7 @@ describe CartoDB::Importer do
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result = importer.import!
-      result.name.should == 'tm_world_borders_simpl_0_3_shp'
+      result.name.should == 'tm_world_borders_simpl_0_3'
       result.rows_imported.should == 246
       result.import_type.should == '.shp'
     end
@@ -244,37 +244,28 @@ describe CartoDB::Importer do
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result = importer.import!
-      result.name.should == 'global_elevation_simple_tif'
+      result.name.should == 'global_elevation_simple'
       result.rows_imported.should == 1500
       result.import_type.should == '.tif'
     end
   end  
   describe "Extended" do
-    it "should import 1 SHP file" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../../../vm-cartodb/extended_tests/kba_lifeweb.zip", __FILE__),
+    it "should import 2 SHP files incrementing the name of the second" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/TM_WORLD_BORDERS_SIMPL-0.3.zip", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result = importer.import!
-      result.name.should == 'kba_pg'
+      result.name.should == 'tm_world_borders_simpl_0_3'
       #result.rows_imported.should == 4365
       result.import_type.should == '.shp'
       
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../../../vm-cartodb/extended_tests/kba_lifeweb.zip", __FILE__),
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/TM_WORLD_BORDERS_SIMPL-0.3.zip", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result2 = importer.import!
-      result2.name.should == 'kba_pg_0'
+      result2.name.should == 'tm_world_borders_simpl_0_4'
       #result.rows_imported.should == 4365
       result2.import_type.should == '.shp'
-    end
-    it "should import 2 SHP file" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../../../vm-cartodb/extended_tests/cua2005index_utm.zip", __FILE__),
-                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
-                                       :host => 'localhost', :port => 5432
-      result = importer.import!
-      result.name.should == 'cua2005index_utm_shp'
-      result.rows_imported.should == 4528
-      result.import_type.should == '.shp'
     end
   end  
 end
