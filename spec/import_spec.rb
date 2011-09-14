@@ -64,7 +64,7 @@ describe CartoDB::Importer do
                                      :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                      :host => 'localhost', :port => 5432, :suggested_name => 'prefered_name'
     result = importer.import!
-    result.name.should == 'prefered_name_2'
+    result.name.should == 'prefered_name_1'
     result.rows_imported.should == 1998
     result.import_type.should == '.csv'
   end
