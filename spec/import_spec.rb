@@ -187,7 +187,7 @@ describe CartoDB::Importer do
                                      :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                      :host => 'localhost', :port => 5432, :suggested_name => 'estaciones2'
       result2 = importer2.import!
-      result2.name.should == 'estaciones2_0'
+      result2.name.should == 'estaciones2_1'
       result2.rows_imported.should == 30
       result2.import_type.should == '.csv'
     end
@@ -271,7 +271,7 @@ describe CartoDB::Importer do
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result2 = importer.import!
-      result2.name.should == 'tm_world_borders_simpl_0_3_0'
+      result2.name.should == 'tm_world_borders_simpl_0_3_1'
       #result.rows_imported.should == 4365
       result2.import_type.should == '.shp'
     end
