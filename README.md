@@ -9,9 +9,9 @@ CartoDB importer is a Ruby gem that makes your life easier when importing data f
   
 ## Installation and dependencies ##
 
-To install Ruby dependencies just install `bundler` gem and run the command `bundle install` in your shell.
+To install Ruby dependencies just install `bundler` the gem and run the command `bundle install` in your shell.
 
-There are also some dependencies of external Python libraries (WTF!). You should install `pip` before:
+There are also some dependencies of external Python libraries. You should install `pip` before:
 
   - In Debian / Ubuntu: `apt-get install python-pip`
   
