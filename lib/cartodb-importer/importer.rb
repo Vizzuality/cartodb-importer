@@ -91,6 +91,10 @@ module CartoDB
       end
         
       import_type = @ext
+      runlog = OpenStruct.new
+      runlog.log = Array.new
+      runlog.stdout = Array.new
+      runlog.err = Array.new
       
       # These types of files are converted to CSV
       if %W{ .xls .xlsx .ods }.include?(@ext)
@@ -103,6 +107,7 @@ module CartoDB
           when '.ods'
             Openoffice.new(path)
           else
+            runlog.log << "Don't know how to open file #{new_path}"
             raise ArgumentError, "Don't know how to open file #{new_path}"
         end.to_csv(new_path)
         @import_from_file = File.open(new_path,'r')
@@ -114,11 +119,15 @@ module CartoDB
         
         ogr2ogr_bin_path = `which ogr2ogr`.strip
         ogr2ogr_command = %Q{#{ogr2ogr_bin_path} -f "PostgreSQL" PG:"host=#{@db_configuration[:host]} port=#{@db_configuration[:port]} user=#{@db_configuration[:username]} dbname=#{@db_configuration[:database]}" #{path} -nln #{@suggested_name}}
-        
-        output = `#{ogr2ogr_command} &> /dev/null`
+          
+        out = `#{ogr2ogr_command}`
+        if 0 < out.strip.length
+          runlog.stdout << out
+        end
         
         # Check if the file had data, if not rise an error because probably something went wrong
         if @db_connection["SELECT * from #{@suggested_name} LIMIT 1"].first.nil?
+          runlog.err << "Empty table"
           raise "Empty table"
         end
         
@@ -134,13 +143,13 @@ module CartoDB
         
         FileUtils.rm_rf(path)
         rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
-
+        
         return OpenStruct.new({
           :name => @suggested_name, 
           :rows_imported => rows_imported,
-          :import_type => import_type
+          :import_type => import_type,
+          :log => runlog
           })
-        
       end
       if @ext == '.shp'
         
@@ -152,56 +161,85 @@ module CartoDB
         random_table_name = "importing_#{Time.now.to_i}_#{@suggested_name}"
         
         normalizer_command = "#{python_bin_path} -Wignore #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{random_table_name}"
-        shp_args_command = `#{normalizer_command}`.split( /, */, 4 )
-
-        #print "-e -i -I -g the_geom -W %s %s %s %s" %(srid,encoding,shp_file,name,flag)
-
+        out = `#{normalizer_command}`
+        shp_args_command = out.split( /, */, 4 )
+        
         if shp_args_command.length != 4
-        raise "Error running python shp_normalizer script: #{normalizer_command}"
+          runlog.log << "Error running python shp_normalizer script: #{normalizer_command}"
+          runlog.stdout << out
+          raise "Error running python shp_normalizer script: #{normalizer_command}"
         end
+        
         full_shp_command = "#{shp2pgsql_bin_path} -s #{shp_args_command[0]} -e -i -I -g the_geom -W #{shp_args_command[1]} #{shp_args_command[2]} #{shp_args_command[3].strip} | #{psql_bin_path} #{host} #{port} -U #{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
         log "Running shp2pgsql: #{full_shp_command}"
-        %x[#{full_shp_command}]
-        if shp_args_command[1] != '4326'
-          
-          @db_connection.run("SELECT UpdateGeometrySRID('#{random_table_name}', 'the_geom', 4326)")
-          @db_connection.run("UPDATE #{random_table_name} SET the_geom = ST_Transform(the_geom, 4326)")
-        end
-        @db_connection.run("CREATE TABLE #{@suggested_name} AS SELECT * FROM #{random_table_name}")
-        @db_connection.run("DROP TABLE #{random_table_name}")
-        @table_created = true
         
+        out = `#{full_shp_command}`
+        if 0 < out.strip.length
+          runlog.stdout << out
+        end
+        
+        if shp_args_command[1] != '4326'
+          begin  
+            @db_connection.run("SELECT UpdateGeometrySRID('#{random_table_name}', 'the_geom', 4326)")
+            @db_connection.run("UPDATE #{random_table_name} SET the_geom = ST_Transform(the_geom, 4326)")
+          rescue Exception => msg  
+            runlog.err << msg
+          end  
+        end
+        
+        begin
+          @db_connection.run("CREATE TABLE #{@suggested_name} AS SELECT * FROM #{random_table_name}")
+          @db_connection.run("DROP TABLE #{random_table_name}")
+          @table_created = true
+        rescue Exception => msg  
+          runlog.err << msg
+        end  
         entries.each{ |e| FileUtils.rm_rf(e) } if entries.any?
         rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
         @import_from_file.unlink
 
         return OpenStruct.new({
-        :name => @suggested_name, 
-        :rows_imported => rows_imported,
-        :import_type => import_type
+          :name => @suggested_name, 
+          :rows_imported => rows_imported,
+          :import_type => import_type,
+          :log => runlog
         })
       end
       if %W{ .tif .tiff }.include?(@ext)  
         log "Importing raster file: #{path}"
+        
         raster2pgsql_bin_path = `which raster2pgsql.py`.strip
         
         host = @db_configuration[:host] ? "-h #{@db_configuration[:host]}" : ""
         port = @db_configuration[:port] ? "-p #{@db_configuration[:port]}" : ""
-        #@suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize) unless @force_name
+        
         random_table_name = "importing_#{Time.now.to_i}_#{@suggested_name}"
         
         gdal_command = "#{python_bin_path} -Wignore #{File.expand_path("../../../misc/srid_from_gdal.py", __FILE__)} #{path}"
         rast_srid_command = `#{gdal_command}`.strip
+        
+        if 0 < rast_srid_command.strip.length
+          runlog.stdout << rast_srid_command
+        end
+        
         
         log "SRID : #{rast_srid_command}"
         
         blocksize = "180x180"
         full_rast_command = "#{raster2pgsql_bin_path} -I -s #{rast_srid_command.strip} -k #{blocksize} -t  #{random_table_name} -r #{path} | #{psql_bin_path} #{host} #{port} -U #{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
         log "Running raster2pgsql: #{raster2pgsql_bin_path}  #{full_rast_command}"
-        %x[#{full_rast_command}]
+        out = `#{full_rast_command}`
+        if 0 < out.strip.length
+          runlog.stdout << out
+        end
         
-        @db_connection.run("CREATE TABLE #{@suggested_name} AS SELECT * FROM #{random_table_name}")
-        @db_connection.run("DROP TABLE #{random_table_name}")
+        begin
+          @db_connection.run("CREATE TABLE #{@suggested_name} AS SELECT * FROM #{random_table_name}")
+          @db_connection.run("DROP TABLE #{random_table_name}")
+          @table_created = true
+        rescue Exception => msg  
+          runlog.err << msg
+        end  
         
         entries.each{ |e| FileUtils.rm_rf(e) } if entries.any?
         rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
@@ -216,7 +254,8 @@ module CartoDB
         return OpenStruct.new({
           :name => @suggested_name, 
           :rows_imported => rows_imported,
-          :import_type => import_type
+          :import_type => import_type,
+          :log => runlog
         })
         
       end
