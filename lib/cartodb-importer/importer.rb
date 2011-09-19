@@ -373,6 +373,10 @@ module CartoDB
     end
     
     def get_valid_name(name)
+      #check if the table name starts with a number
+      if !(name[0,1].to_s.match(/\A[+-]?\d+?(\.\d+)?\Z/) == nil)
+        name="_#{name}"
+      end
       existing_names = @db_connection["select relname from pg_stat_user_tables WHERE schemaname='public' and relname ilike '#{name}%'"].map(:relname)
       testn = 1
       uniname = name
