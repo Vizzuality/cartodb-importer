@@ -197,6 +197,35 @@ describe CartoDB::Importer do
     end
   end
   
+  describe "#KML" do
+    it "should import KML file rmnp.kml" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/rmnp.kml", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      result.name.should == 'tm_world_borders_simpl_0_3'
+      result.rows_imported.should == 246
+      result.import_type.should == '.kml'
+    end
+    it "should import KML file rmnp.zip" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/rmnp.zip", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      result.name.should == 'tm_world_borders_simpl_0_3'
+      result.rows_imported.should == 246
+      result.import_type.should == '.kml'
+    end
+    it "should import KMZ file rmnp.kmz" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/rmnp.kmz", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      result.name.should == 'tm_world_borders_simpl_0_3'
+      result.rows_imported.should == 246
+      result.import_type.should == '.kmz'
+    end
+  end
   describe "#SHP" do
     it "should import a SHP file in the given database in a table named like the file" do
       options = { :import_from_file => File.expand_path("../support/data/EjemploVizzuality.zip", __FILE__),
@@ -227,6 +256,7 @@ describe CartoDB::Importer do
       result.rows_imported.should == 246
       result.import_type.should == '.shp'
     end
+  
 
     it "should import SHP file TM_WORLD_BORDERS_SIMPL-0.3.zip but set the given name" do
       importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/TM_WORLD_BORDERS_SIMPL-0.3.zip", __FILE__),
