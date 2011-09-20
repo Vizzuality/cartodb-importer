@@ -3,7 +3,7 @@
 module CartoDB
   class Importer
     RESERVED_COLUMN_NAMES = %W{ oid tableoid xmin cmin xmax cmax ctid }
-    SUPPORTED_FORMATS = %W{ .csv .shp .ods .xls .xlsx .tif .tiff }
+    SUPPORTED_FORMATS = %W{ .csv .shp .ods .xls .xlsx .tif .tiff .kml .kmz }
     
     class << self
       attr_accessor :debug
@@ -82,7 +82,8 @@ module CartoDB
       psql_bin_path = `which psql`.strip
       
       entries = []
-      if @ext == '.zip'
+      #if @ext == '.zip'
+      if %W{ .zip .kmz }.include?(@ext)
         log "Importing zip file: #{path}"
         Zip::ZipFile.foreach(path) do |entry|
           name = entry.name.split('/').last
@@ -127,43 +128,22 @@ module CartoDB
       end
       
       if %W{ .kmz .kml }.include?(@ext)
-        
-        log "KMLMKMKLMKLMKLMKKMLLMKM"
         ogr2ogr_bin_path = `which ogr2ogr`.strip
-        ogr2ogr_command = %Q{#{ogr2ogr_bin_path} -f "PostgreSQL" PG:"host=#{@db_configuration[:host]} port=#{@db_configuration[:port]} user=#{@db_configuration[:username]} dbname=#{@db_configuration[:database]}" #{path} -nln #{@suggested_name}}
-        
-        log "#{ogr2ogr_command}"
+        ogr2ogr_command = %Q{#{ogr2ogr_bin_path} -f "ESRI Shapefile" #{path}.shp #{path}}
         out = `#{ogr2ogr_command}`
+        
         if 0 < out.strip.length
           runlog.stdout << out
         end
         
-        # Check if the file had data, if not rise an error because probably something went wrong
-        if @db_connection["SELECT * from #{@suggested_name} LIMIT 1"].first.nil?
-          runlog.err << "Empty table"
-          raise "Empty table"
+        if File.file?("#{path}.shp")
+          path = "#{path}.shp"
+          @ext = '.shp'
+        else
+          runlog.err << "failed to create shp file from kml"
         end
-        
-        # Sanitize column names where needed
-        column_names = @db_connection.schema(@suggested_name).map{ |s| s[0].to_s }
-        need_sanitizing = column_names.each do |column_name|
-          if column_name != column_name.sanitize_column_name
-            @db_connection.run("ALTER TABLE #{@suggested_name} RENAME COLUMN \"#{column_name}\" TO #{column_name.sanitize_column_name}")
-          end
-        end
-        
-        @table_created = true
-        
-        FileUtils.rm_rf(path)
-        rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
-        
-        return OpenStruct.new({
-          :name => @suggested_name, 
-          :rows_imported => rows_imported,
-          :import_type => import_type,
-          :log => runlog
-          })
       end
+      
       if @ext == '.csv'
         
         ogr2ogr_bin_path = `which ogr2ogr`.strip
@@ -201,12 +181,12 @@ module CartoDB
           })
       end
       if @ext == '.shp'
-        
+        log "processing shp"
         shp2pgsql_bin_path = `which shp2pgsql`.strip
 
         host = @db_configuration[:host] ? "-h #{@db_configuration[:host]}" : ""
         port = @db_configuration[:port] ? "-p #{@db_configuration[:port]}" : ""
-        #@suggested_name = get_valid_name(File.basename(path).tr('.','_').downcase.sanitize) unless @force_name
+        
         random_table_name = "importing_#{Time.now.to_i}_#{@suggested_name}"
         
         normalizer_command = "#{python_bin_path} -Wignore #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{path} #{random_table_name}"
