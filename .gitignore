@@ -5,3 +5,4 @@ pkg/*
 misc/*.pyc
 bin/*
 build/*
+*.DS_Store
