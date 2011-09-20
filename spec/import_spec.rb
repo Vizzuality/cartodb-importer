@@ -290,4 +290,37 @@ describe CartoDB::Importer do
       result.import_type.should == '.shp'
     end
   end  
+  describe "Natural Earth Polygons" do
+    it "should import Natural Earth Polygons" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/110m-glaciated-areas.zip", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      #result.rows_imported.should == 4365
+      result.import_type.should == '.shp'
+    end
+  end  
+  
+  describe "Import from URL" do
+    it "should import a shapefile from NaturalEarthData.com" do
+      importer = CartoDB::Importer.new :import_from_url => "http://www.nacis.org/naturalearth/10m/cultural/10m_parks_and_protected_areas.zip",
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      result.rows_imported.should == 312
+      result.import_type.should == '.shp'
+    end
+  end  
+  
+  describe "Import from Simon file" do
+    it "should import a shapefile from Simon" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/simon-search-spain-1297870422647.zip", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      #result.rows_imported.should == 312
+      result.import_type.should == '.shp'
+    end
+  end  
+  
 end

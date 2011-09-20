@@ -10,7 +10,7 @@ module CartoDB
     end
     @@debug = true
     
-    attr_accessor :import_from_file, :suggested_name,
+    attr_accessor :import_from_file,:import_from_url, :suggested_name,
                   :ext, :db_configuration, :db_connection
                   
     attr_reader :table_created, :force_name
@@ -18,7 +18,18 @@ module CartoDB
     def initialize(options = {})
       @@debug = options[:debug] if options[:debug]
       @table_created = nil
-      @import_from_file = options[:import_from_file]
+      
+      if !options[:import_from_url].blank?
+        #download from internet first
+        potential_name = File.basename(options[:import_from_url])
+        wget_cmd = "wget \"#{options[:import_from_url]}\ -o /tmp/#{potential_name}"
+        #log wget_cmd
+        `#{wget_cmd}`
+        @import_from_file = "/tmp/#{potential_name}"
+      else
+        @import_from_file = options[:import_from_file]
+      end
+      
       raise "import_from_file value can't be nil" if @import_from_file.nil?
 
       @db_configuration = options.slice(:database, :username, :password, :host, :port)
@@ -208,7 +219,7 @@ module CartoDB
           raise "Error running python shp_normalizer script: #{normalizer_command}"
         end
         
-        full_shp_command = "#{shp2pgsql_bin_path} -s #{shp_args_command[0]} -e -i -I -g the_geom -W #{shp_args_command[1]} #{shp_args_command[2]} #{shp_args_command[3].strip} | #{psql_bin_path} #{host} #{port} -U #{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
+        full_shp_command = "#{shp2pgsql_bin_path} -s #{shp_args_command[0]} -e -i -g the_geom -W #{shp_args_command[1]} #{shp_args_command[2]} #{shp_args_command[3].strip} | #{psql_bin_path} #{host} #{port} -U #{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
         log "Running shp2pgsql: #{full_shp_command}"
         
         out = `#{full_shp_command}`
@@ -219,23 +230,24 @@ module CartoDB
         if shp_args_command[1] != '4326'
           begin  
             @db_connection.run("SELECT UpdateGeometrySRID('#{random_table_name}', 'the_geom', 4326)")
-            @db_connection.run("UPDATE #{random_table_name} SET the_geom = ST_Transform(the_geom, 4326)")
+            @db_connection.run("UPDATE \"#{random_table_name}\" SET the_geom = ST_Transform(the_geom, 4326)")
+            @db_connection.run("CREATE INDEX \"#{random_table_name}_the_geom_gist\" ON \"#{random_table_name}\" USING GIST (the_geom)")
           rescue Exception => msg  
             runlog.err << msg
           end  
         end
         
         begin
-          @db_connection.run("CREATE TABLE #{@suggested_name} AS SELECT * FROM #{random_table_name}")
-          @db_connection.run("DROP TABLE #{random_table_name}")
+          @db_connection.run("ALTER TABLE \"#{random_table_name}\" RENAME TO \"#{@suggested_name}\"")
           @table_created = true
         rescue Exception => msg  
           runlog.err << msg
         end  
+        
         entries.each{ |e| FileUtils.rm_rf(e) } if entries.any?
-        rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
+        rows_imported = @db_connection["SELECT count(*) as count from \"#{@suggested_name}\""].first[:count]
         @import_from_file.unlink
-
+        
         return OpenStruct.new({
           :name => @suggested_name, 
           :rows_imported => rows_imported,
@@ -272,21 +284,21 @@ module CartoDB
         end
         
         begin
-          @db_connection.run("CREATE TABLE #{@suggested_name} AS SELECT * FROM #{random_table_name}")
-          @db_connection.run("DROP TABLE #{random_table_name}")
+          @db_connection.run("CREATE TABLE \"#{@suggested_name}\" AS SELECT * FROM \"#{random_table_name}\"")
+          @db_connection.run("DROP TABLE \"#{random_table_name}\"")
           @table_created = true
         rescue Exception => msg  
           runlog.err << msg
         end  
         
         entries.each{ |e| FileUtils.rm_rf(e) } if entries.any?
-        rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
+        rows_imported = @db_connection["SELECT count(*) as count from \"#{@suggested_name}\""].first[:count]
         @import_from_file.unlink
         
         @table_created = true
         
         entries.each{ |e| FileUtils.rm_rf(e) } if entries.any?
-        rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
+        rows_imported = @db_connection["SELECT count(*) as count from \"#{@suggested_name}\""].first[:count]
         @import_from_file.unlink
         
         return OpenStruct.new({
@@ -400,6 +412,10 @@ module CartoDB
     end
     
     def get_valid_name(name)
+      #check if the table name starts with a number
+      if !(name[0,1].to_s.match(/\A[+-]?\d+?(\.\d+)?\Z/) == nil)
+        name="_#{name}"
+      end
       existing_names = @db_connection["select relname from pg_stat_user_tables WHERE schemaname='public' and relname ilike '#{name}%'"].map(:relname)
       testn = 1
       uniname = name
