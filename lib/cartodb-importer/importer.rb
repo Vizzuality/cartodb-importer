@@ -205,10 +205,11 @@ module CartoDB
         rescue Exception => msg  
           runlog.err << msg
         end  
+        
         entries.each{ |e| FileUtils.rm_rf(e) } if entries.any?
         rows_imported = @db_connection["SELECT count(*) as count from \"#{@suggested_name}\""].first[:count]
         @import_from_file.unlink
-
+        
         return OpenStruct.new({
           :name => @suggested_name, 
           :rows_imported => rows_imported,
