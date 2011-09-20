@@ -277,7 +277,7 @@ describe CartoDB::Importer do
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
       result = importer.import!
-      #result.rows_imported.should == 4365
+      result.rows_imported.should == 312
       result.import_type.should == '.shp'
     end
   end  
