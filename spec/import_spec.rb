@@ -282,4 +282,15 @@ describe CartoDB::Importer do
     end
   end  
   
+  describe "Import from Simon file" do
+    it "should import a shapefile from Simon" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/simon-search-spain-1297870422647.zip", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      #result.rows_imported.should == 312
+      result.import_type.should == '.shp'
+    end
+  end  
+  
 end
