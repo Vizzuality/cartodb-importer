@@ -199,15 +199,6 @@ describe CartoDB::Importer do
   
   describe "#KML" do
     it "should import KML file rmnp.kml" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../../../vm-cartodb/extended_tests/pfinder.kml", __FILE__),
-                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
-                                       :host => 'localhost', :port => 5432
-      result = importer.import!
-      result.name.should == 'rmnp'
-      result.rows_imported.should == 1
-      result.import_type.should == '.kml'
-    end
-    it "should import KML file rmnp.kml" do
       importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/rmnp.kml", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432
@@ -233,6 +224,17 @@ describe CartoDB::Importer do
       result.name.should == 'rmnp'
       result.rows_imported.should == 1
       result.import_type.should == '.kml'
+    end
+  end
+  describe "#GeoJSON" do
+    it "should import GeoJSON file simple.json" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/simple.json", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      result.name.should == 'simple'
+      result.rows_imported.should == 11
+      result.import_type.should == '.json'
     end
   end
   describe "#SHP" do
