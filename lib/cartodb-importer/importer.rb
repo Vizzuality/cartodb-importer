@@ -22,7 +22,7 @@ module CartoDB
       if !options[:import_from_url].blank?
         #download from internet first
         potential_name = File.basename(options[:import_from_url])
-        wget_cmd = "wget \"#{options[:import_from_url]}\ -o /tmp/#{potential_name}"
+        wget_cmd = "wget \"#{options[:import_from_url]}\" -O /tmp/#{potential_name}"
         #log wget_cmd
         `#{wget_cmd}`
         @import_from_file = "/tmp/#{potential_name}"
