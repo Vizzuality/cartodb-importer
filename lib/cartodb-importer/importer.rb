@@ -11,7 +11,7 @@ module CartoDB
     @@debug = true
     
     attr_accessor :import_from_file,:import_from_url, :suggested_name,
-                  :ext, :db_configuration, :db_connection
+                  :ext, :db_configuration, :db_connection, :append_to_table
                   
     attr_reader :table_created, :force_name
 
@@ -36,7 +36,12 @@ module CartoDB
       @db_configuration[:port] ||= 5432
       @db_configuration[:host] ||= '127.0.0.1'
       @db_connection = Sequel.connect("postgres://#{@db_configuration[:username]}:#{@db_configuration[:password]}@#{@db_configuration[:host]}:#{@db_configuration[:port]}/#{@db_configuration[:database]}")
-
+      unless options[:append_to_table].nil?
+        @append_to_table = options[:append_to_table]
+      else
+        @append_to_table = nil
+      end
+        
       unless options[:suggested_name].nil? || options[:suggested_name].blank?
         @force_name = true
         @suggested_name = get_valid_name(options[:suggested_name])
@@ -245,8 +250,10 @@ module CartoDB
         
         if shp_args_command[1] != '4326'
           begin  
-            @db_connection.run("SELECT UpdateGeometrySRID('#{random_table_name}', 'the_geom', 4326)")
-            @db_connection.run("UPDATE \"#{random_table_name}\" SET the_geom = ST_Transform(the_geom, 4326)")
+            @db_connection.run("ALTER TABLE #{random_table_name} RENAME COLUMN the_geom TO the_geom_orig;")
+            geom_type = @db_connection["SELECT GeometryType(the_geom_orig) as type from #{random_table_name} LIMIT 1"].first[:type]
+            @db_connection.run("SELECT AddGeometryColumn('#{random_table_name}','the_geom',4326, '#{geom_type}', 2);")
+            @db_connection.run("UPDATE \"#{random_table_name}\" SET the_geom = ST_Transform(the_geom_orig, 4326)")
             @db_connection.run("CREATE INDEX \"#{random_table_name}_the_geom_gist\" ON \"#{random_table_name}\" USING GIST (the_geom)")
           rescue Exception => msg  
             runlog.err << msg

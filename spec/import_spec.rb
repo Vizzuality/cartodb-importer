@@ -239,7 +239,7 @@ describe CartoDB::Importer do
   end
   describe "#SHP" do
     it "should import a SHP file in the given database in a table named like the file" do
-      options = { :import_from_file => File.expand_path("../support/data/EjemploVizzuality.zip", __FILE__),
+      options = { :import_from_file => File.expand_path("../support/data/cables_3857.zip", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                        :host => 'localhost', :port => 5432 }
                                        
@@ -333,5 +333,4 @@ describe CartoDB::Importer do
       result.import_type.should == '.shp'
     end
   end  
-  
 end
