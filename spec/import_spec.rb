@@ -197,6 +197,46 @@ describe CartoDB::Importer do
     end
   end
   
+  describe "#KML" do
+    it "should import KML file rmnp.kml" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/rmnp.kml", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      result.name.should == 'rmnp'
+      result.rows_imported.should == 1
+      result.import_type.should == '.kml'
+    end
+    it "should import KML file rmnp.zip" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/rmnp.zip", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      result.name.should == 'rmnp'
+      result.rows_imported.should == 1
+      result.import_type.should == '.kml'
+    end
+    it "should import KMZ file rmnp.kmz" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/rmnp.kmz", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      result.name.should == 'rmnp'
+      result.rows_imported.should == 1
+      result.import_type.should == '.kml'
+    end
+  end
+  describe "#GeoJSON" do
+    it "should import GeoJSON file simple.json" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/simple.json", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      result.name.should == 'simple'
+      result.rows_imported.should == 11
+      result.import_type.should == '.json'
+    end
+  end
   describe "#SHP" do
     it "should import a SHP file in the given database in a table named like the file" do
       options = { :import_from_file => File.expand_path("../support/data/EjemploVizzuality.zip", __FILE__),
@@ -227,6 +267,7 @@ describe CartoDB::Importer do
       result.rows_imported.should == 246
       result.import_type.should == '.shp'
     end
+  
 
     it "should import SHP file TM_WORLD_BORDERS_SIMPL-0.3.zip but set the given name" do
       importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/TM_WORLD_BORDERS_SIMPL-0.3.zip", __FILE__),
@@ -282,4 +323,14 @@ describe CartoDB::Importer do
     end
   end  
   
+  describe "Import from Simon file" do
+    it "should import a shapefile from Simon" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/simon-search-spain-1297870422647.zip", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      #result.rows_imported.should == 312
+      result.import_type.should == '.shp'
+    end
+  end  
 end
