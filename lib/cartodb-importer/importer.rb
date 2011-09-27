@@ -254,6 +254,7 @@ module CartoDB
             geom_type = @db_connection["SELECT GeometryType(the_geom_orig) as type from #{random_table_name} LIMIT 1"].first[:type]
             @db_connection.run("SELECT AddGeometryColumn('#{random_table_name}','the_geom',4326, '#{geom_type}', 2);")
             @db_connection.run("UPDATE \"#{random_table_name}\" SET the_geom = ST_Transform(the_geom_orig, 4326)")
+            @db_connection.run("ALTER TABLE #{random_table_name} DROP COLUMN the_geom_orig")
             @db_connection.run("CREATE INDEX \"#{random_table_name}_the_geom_gist\" ON \"#{random_table_name}\" USING GIST (the_geom)")
           rescue Exception => msg  
             runlog.err << msg
