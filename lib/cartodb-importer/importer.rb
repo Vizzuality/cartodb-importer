@@ -209,6 +209,36 @@ module CartoDB
           end
         end
         
+        #Now, if there is a ltitude and longitude column, lets create a the_geom for it
+        latitude_possible_names = "'latitude','lat','latitudedecimal','latitud','lati'"
+        longitude_possible_names = "'longitude','lon','lng','longitudedecimal','longitud','long'"
+        
+        matching_latitude = nil
+        res = @db_connection["select column_name from information_schema.columns where table_name ='#{@suggested_name}' 
+          and lower(column_name) in (#{latitude_possible_names}) LIMIT 1"]
+        if !res.first.nil?
+          matching_latitude= res.first[:column_name]
+        end
+        matching_longitude = nil
+        res = @db_connection["select column_name from information_schema.columns where table_name ='#{@suggested_name}' 
+          and lower(column_name) in (#{longitude_possible_names}) LIMIT 1"]
+        if !res.first.nil?
+          matching_longitude= res.first[:column_name]
+        end        
+        
+        
+        if matching_latitude and matching_longitude
+            #we know there is a latitude/longitude columns
+            @db_connection.run("SELECT AddGeometryColumn('#{@suggested_name}','the_geom',4326, 'POINT', 2);")
+            @db_connection.run("UPDATE \"#{@suggested_name}\" SET the_geom = ST_GeomFromText('POINT('|| \"#{matching_longitude}\" ||' '|| \"#{matching_latitude}\" ||')',4326)
+              WHERE \"#{matching_longitude}\" IS NOT NULL AND \"#{matching_latitude}\" IS NOT NULL AND \"#{matching_longitude}\"<>'' AND \"#{matching_latitude}\"<>''")
+            @db_connection.run("CREATE INDEX \"#{@suggested_name}_the_geom_gist\" ON \"#{@suggested_name}\" USING GIST (the_geom)")
+        end
+        
+        
+        
+        
+        
         @table_created = true
         
         FileUtils.rm_rf(path)
@@ -253,7 +283,7 @@ module CartoDB
             @db_connection.run("ALTER TABLE #{random_table_name} RENAME COLUMN the_geom TO the_geom_orig;")
             geom_type = @db_connection["SELECT GeometryType(the_geom_orig) as type from #{random_table_name} LIMIT 1"].first[:type]
             @db_connection.run("SELECT AddGeometryColumn('#{random_table_name}','the_geom',4326, '#{geom_type}', 2);")
-            @db_connection.run("UPDATE \"#{random_table_name}\" SET the_geom = ST_Transform(the_geom_orig, 4326)")
+            @db_connection.run("UPDATE \"#{random_table_name}\" SET the_geom = ST_Force_2D(ST_Transform(the_geom_orig, 4326))")
             @db_connection.run("ALTER TABLE #{random_table_name} DROP COLUMN the_geom_orig")
             @db_connection.run("CREATE INDEX \"#{random_table_name}_the_geom_gist\" ON \"#{random_table_name}\" USING GIST (the_geom)")
           rescue Exception => msg  

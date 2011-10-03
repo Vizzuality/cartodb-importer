@@ -333,4 +333,41 @@ describe CartoDB::Importer do
       result.import_type.should == '.shp'
     end
   end  
+  
+  describe "Import KML" do
+    it "should import a KML ZIP file" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/states.kml.zip", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      #result.rows_imported.should == 312
+      #result.import_type.should == '.shp'
+    end
+  end  
+  
+  describe "Import CSV with latidude/logitude" do
+    it "should import estaciones2.csv" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/walmart.csv", __FILE__),
+                                   :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                   :host => 'localhost', :port => 5432, :suggested_name => 'walmart'
+      result = importer.import!
+      result.name.should == 'walmart'
+      #result.rows_imported.should == 30
+      result.import_type.should == '.csv'
+    end
+  end
+  
+  describe "Import CSV with lat/lon" do
+    it "should import estaciones2.csv" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/walmart_latlon.csv", __FILE__),
+                                   :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                   :host => 'localhost', :port => 5432, :suggested_name => 'walmart_latlon'
+      result = importer.import!
+      result.name.should == 'walmart_latlon'
+      #result.rows_imported.should == 30
+      result.import_type.should == '.csv'
+    end
+  end  
+  
+  
 end
