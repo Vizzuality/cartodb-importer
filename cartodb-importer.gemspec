@@ -25,7 +25,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "spreadsheet", "~> 0.6.5.9"
   s.add_runtime_dependency "google-spreadsheet-ruby", "~> 0.1.5"
   s.add_runtime_dependency "rubyzip", "~> 0.9.4"
-  s.add_runtime_dependency "builder", "~> 3.0.0"
+  s.add_runtime_dependency "builder"
   s.add_runtime_dependency "rgeo", "~> 0.3.2"
   s.add_runtime_dependency "rgeo-geojson", "~> 0.2.1"
   
