@@ -175,7 +175,7 @@ module CartoDB
         
         @table_created = true
         
-        FileUtils.rm_rf(path)
+        FileUtils.rm_rf(Dir.glob(path))
         rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
         
         return OpenStruct.new({
@@ -209,39 +209,82 @@ module CartoDB
           end
         end
         
-        #Now, if there is a ltitude and longitude column, lets create a the_geom for it
-        latitude_possible_names = "'latitude','lat','latitudedecimal','latitud','lati'"
-        longitude_possible_names = "'longitude','lon','lng','longitudedecimal','longitud','long'"
-        
-        matching_latitude = nil
-        res = @db_connection["select column_name from information_schema.columns where table_name ='#{@suggested_name}' 
-          and lower(column_name) in (#{latitude_possible_names}) LIMIT 1"]
-        if !res.first.nil?
-          matching_latitude= res.first[:column_name]
+        # Importing CartoDB CSV exports
+        # ===============================
+        # * if there is a column already called the_geom
+        # * if there is geojson in it
+        # * rename column to the_geom_orig
+        # * create a new column with the correct type (Assume 4326) "the_geom_temp"
+        # * loop over table and parse geojson into postgis geometries
+        # * drop the_geom_orig
+        #
+        # TODO: move the geom over using ST_FromGeoJSON once inside PostGIS 2.0
+        if column_names.include? "the_geom"        
+          if res = @db_connection["select the_geom from #{@suggested_name} limit 1"].first
+            
+            # attempt to read as geojson. If it fails, continue
+            begin
+              geojson       = RGeo::GeoJSON.decode(res[:the_geom], :json_parser => :json)
+              geometry_type = geojson.geometry_type.type_name.upcase           
+
+              if geometry_type
+                # move original geometry column around
+                @db_connection.run("ALTER TABLE #{@suggested_name} RENAME COLUMN the_geom TO the_geom_orig;")                
+                @db_connection.run("SELECT AddGeometryColumn('#{@suggested_name}','the_geom',4326, '#{geometry_type}', 2)")
+                @db_connection.run("CREATE INDEX #{@suggested_name}_the_geom_gist ON #{@suggested_name} USING GIST (the_geom)")
+                                
+                # loop through old geom parsing into the_geom. 
+                # TODO: Should probably window this
+                @db_connection["select the_geom_orig from #{@suggested_name}"].each do |res|
+                  begin
+                    geojson = RGeo::GeoJSON.decode(res[:the_geom_orig], :json_parser => :json)
+                    @db_connection.run("UPDATE #{@suggested_name} SET the_geom = ST_GeomFromText('#{geojson.as_text}', 4326) WHERE the_geom_orig = '#{res[:the_geom_orig]}'")                       
+                  rescue => e
+                    runlog.err << "silently fail conversion #{geojson.inspect} to #{@suggested_name}. #{e.inspect}"
+                  end
+                end  
+                
+                # Drop original the_geom column
+                @db_connection.run("ALTER TABLE #{@suggested_name} DROP COLUMN the_geom_orig")
+              end                  
+            rescue => e
+              runlog.err << "failed to read geojson for #{@suggested_name}. #{e.inspect}"
+            end
+          end
         end
-        matching_longitude = nil
-        res = @db_connection["select column_name from information_schema.columns where table_name ='#{@suggested_name}' 
-          and lower(column_name) in (#{longitude_possible_names}) LIMIT 1"]
-        if !res.first.nil?
-          matching_longitude= res.first[:column_name]
-        end        
+        
+        # if there is no the_geom, and there are latitude and longitude columns, create the_geom
+        unless column_names.include? "the_geom"
+          
+          latitude_possible_names = "'latitude','lat','latitudedecimal','latitud','lati'"
+          longitude_possible_names = "'longitude','lon','lng','longitudedecimal','longitud','long'"
+        
+          matching_latitude = nil
+          res = @db_connection["select column_name from information_schema.columns where table_name ='#{@suggested_name}' 
+            and lower(column_name) in (#{latitude_possible_names}) LIMIT 1"]
+          if !res.first.nil?
+            matching_latitude= res.first[:column_name]
+          end
+          matching_longitude = nil
+          res = @db_connection["select column_name from information_schema.columns where table_name ='#{@suggested_name}' 
+            and lower(column_name) in (#{longitude_possible_names}) LIMIT 1"]
+          if !res.first.nil?
+            matching_longitude= res.first[:column_name]
+          end        
         
         
-        if matching_latitude and matching_longitude
-            #we know there is a latitude/longitude columns
-            @db_connection.run("SELECT AddGeometryColumn('#{@suggested_name}','the_geom',4326, 'POINT', 2);")
-            @db_connection.run("UPDATE \"#{@suggested_name}\" SET the_geom = ST_GeomFromText('POINT('|| \"#{matching_longitude}\" ||' '|| \"#{matching_latitude}\" ||')',4326)
-              WHERE \"#{matching_longitude}\" IS NOT NULL AND \"#{matching_latitude}\" IS NOT NULL AND \"#{matching_longitude}\"<>'' AND \"#{matching_latitude}\"<>''")
-            @db_connection.run("CREATE INDEX \"#{@suggested_name}_the_geom_gist\" ON \"#{@suggested_name}\" USING GIST (the_geom)")
+          if matching_latitude and matching_longitude
+              #we know there is a latitude/longitude columns
+              @db_connection.run("SELECT AddGeometryColumn('#{@suggested_name}','the_geom',4326, 'POINT', 2);")
+              @db_connection.run("UPDATE \"#{@suggested_name}\" SET the_geom = ST_GeomFromText('POINT('|| \"#{matching_longitude}\" ||' '|| \"#{matching_latitude}\" ||')',4326)
+                WHERE \"#{matching_longitude}\" IS NOT NULL AND \"#{matching_latitude}\" IS NOT NULL AND \"#{matching_longitude}\"<>'' AND \"#{matching_latitude}\"<>''")
+              @db_connection.run("CREATE INDEX \"#{@suggested_name}_the_geom_gist\" ON \"#{@suggested_name}\" USING GIST (the_geom)")
+          end
         end
-        
-        
-        
-        
         
         @table_created = true
         
-        FileUtils.rm_rf(path)
+        FileUtils.rm_rf(Dir.glob(path))
         rows_imported = @db_connection["SELECT count(*) as count from #{@suggested_name}"].first[:count]
         
         return OpenStruct.new({

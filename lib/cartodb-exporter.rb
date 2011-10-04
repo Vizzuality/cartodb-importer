@@ -4,6 +4,8 @@ require 'rubygems'
 require 'bundler'
 Bundler.setup
 
+require 'rgeo'
+require 'rgeo/geo_json'
 require 'roo'
 require 'csv'
 require 'tempfile'
