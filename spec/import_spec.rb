@@ -254,7 +254,7 @@ describe CartoDB::Importer do
       columns = db_connection.schema(:vizzuality).map{|s| s[0].to_s}
       
       expected_columns = ["gid", "subclass", "x", "y", "length", "area", "angle", "name", 
-        "pid", "lot_navteq", "version_na", "vitesse_sp", "id", "nombrerest", "tipocomida", "the_geom"]
+        "pid", "lot_navteq", "version_na", "vitesse_sp", "id", "nombrerest", "tipocomida"]
       (columns & expected_columns).sort.should == expected_columns.sort
     end
     
