@@ -149,7 +149,9 @@ module CartoDB
         # extract the 3 shp files (and associated dbf and so on)
         # it will create a folder
         ogr2ogr_bin_path = `which ogr2ogr`.strip
-        ogr2ogr_command = %Q{#{ogr2ogr_bin_path} -f "ESRI Shapefile" #{shp_file} #{path}}
+        # ogr2ogr does not manage well datetime fields in gpx to transform it to string in 
+        # order to import correctly
+        ogr2ogr_command = %Q{#{ogr2ogr_bin_path} -fieldTypeToString DateTime -f "ESRI Shapefile" #{shp_file} #{path}}
         out = `#{ogr2ogr_command}`
 
         track_points = "#{shp_file}/track_points.shp"
