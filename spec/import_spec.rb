@@ -153,7 +153,8 @@ describe CartoDB::Importer do
       result.rows_imported.should == 937
       result.import_type.should == '.csv'
     end
-    it "should import cp_vizzuality_export.csv" do
+    pending "should import cp_vizzuality_export.csv" do
+      #this test takes minutes to run, do not use unless you have time to spare
       importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/cp_vizzuality_export.csv", __FILE__),
                                      :database => "cartodb_importer_test", :username => 'postgres', :password => '',
                                      :host => 'localhost', :port => 5432
@@ -183,6 +184,51 @@ describe CartoDB::Importer do
       result.rows_imported.should == 30
       result.import_type.should == '.csv'
     end
+    it "should import walmart.csv" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/walmart.csv", __FILE__),
+                                   :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                   :host => 'localhost', :port => 5432, :suggested_name => 'walmart'
+      result = importer.import!
+      result.name.should == 'walmart'
+      #result.rows_imported.should == 30
+      result.import_type.should == '.csv'
+    end
+    it "should import walmart_latlon.csv with latitude/longitude" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/walmart_latlon.csv", __FILE__),
+                                   :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                   :host => 'localhost', :port => 5432, :suggested_name => 'walmart_latlon'
+      result = importer.import!
+      result.name.should == 'walmart_latlon'
+      #result.rows_imported.should == 30
+      result.import_type.should == '.csv'
+    end
+    it "should import CartoDB_csv_export.zip export with lat/lon" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/CartoDB_csv_export.zip", __FILE__),
+                                   :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                   :host => 'localhost', :port => 5432, :suggested_name => 'cartodb_csv_export'
+      result = importer.import!
+      result.name.should == 'cartodb_csv_export'
+      result.rows_imported.should == 155
+      result.import_type.should == '.csv'
+    end
+    # TODO: check that the_geom is now a real geometry built from geojson.
+    it "should import CartoDB_csv_multipoly_export.zip export with the_geom in geojson" do
+      opt = {:import_from_file => File.expand_path("../support/data/CartoDB_csv_multipoly_export.zip", __FILE__),
+                 :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                 :host => 'localhost', :port => 5432, :suggested_name => 'cartodb_csv_multipoly_export'}
+      importer = CartoDB::Importer.new opt
+      result = importer.import!
+      result.name.should == 'cartodb_csv_multipoly_export'
+      result.rows_imported.should == 601
+      result.import_type.should == '.csv'
+      
+      # test geometry returned is legit
+      pg = "postgres://#{opt[:username]}:#{opt[:password]}@#{opt[:host]}:#{opt[:port]}/#{opt[:database]}" 
+      sql = "select ST_AsGeoJSON(the_geom,0) as geom from cartodb_csv_multipoly_export limit 1"
+      db_connection = Sequel.connect(pg)            
+      res = db_connection[sql].first[:geom]
+      res.should == '{"type":"MultiPolygon","coordinates":[[[[2,39],[2,39],[2,39],[2,39],[2,39]]]]}'
+    end
   end
   
   describe "#XLSX" do
@@ -198,6 +244,14 @@ describe CartoDB::Importer do
   end
   
   describe "#KML" do
+    it "should import a KML ZIP file" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/states.kml.zip", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+      result = importer.import!
+      #result.rows_imported.should == 312
+      #result.import_type.should == '.shp'
+    end
     it "should import KML file rmnp.kml" do
       importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/rmnp.kml", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
@@ -278,6 +332,26 @@ describe CartoDB::Importer do
       result.rows_imported.should == 246
       result.import_type.should == '.shp'
     end
+    it "should import CartoDB_shp_export.zip export with lat/lon" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/CartoDB_shp_export.zip", __FILE__),
+                                   :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                   :host => 'localhost', :port => 5432, :suggested_name => 'cartodb_shp_export'
+      result = importer.import!
+      result.name.should == 'cartodb_shp_export'
+      result.rows_imported.should == 155
+      result.import_type.should == '.shp'
+    end
+    
+    describe "Import from Simon file" do
+      it "should import a shapefile from Simon" do
+        importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/simon-search-spain-1297870422647.zip", __FILE__),
+                                         :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                         :host => 'localhost', :port => 5432
+        result = importer.import!
+        #result.rows_imported.should == 312
+        result.import_type.should == '.shp'
+      end
+    end  
   end
   describe "#GTIFF" do
     it "should import a GTIFF file in the given database in a table named like the file" do
@@ -322,9 +396,6 @@ describe CartoDB::Importer do
       result.import_type.should == '.shp'
     end
   end  
-
-
-  
   describe "import GPX file" do
       it "should import GPX file" do
         importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/route2.gpx", __FILE__),
@@ -337,98 +408,5 @@ describe CartoDB::Importer do
         result.import_type.should == '.gpx'
       end
   end
-  
-  describe "Import from Simon file" do
-    it "should import a shapefile from Simon" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/simon-search-spain-1297870422647.zip", __FILE__),
-                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
-                                       :host => 'localhost', :port => 5432
-      result = importer.import!
-      #result.rows_imported.should == 312
-      result.import_type.should == '.shp'
-    end
-  end  
-  
-  describe "Import KML" do
-    it "should import a KML ZIP file" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/states.kml.zip", __FILE__),
-                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
-                                       :host => 'localhost', :port => 5432
-      result = importer.import!
-      #result.rows_imported.should == 312
-      #result.import_type.should == '.shp'
-    end
-  end  
-  
-  describe "Import CSV with latidude/logitude" do
-    it "should import walmart.csv" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/walmart.csv", __FILE__),
-                                   :database => "cartodb_importer_test", :username => 'postgres', :password => '',
-                                   :host => 'localhost', :port => 5432, :suggested_name => 'walmart'
-      result = importer.import!
-      result.name.should == 'walmart'
-      #result.rows_imported.should == 30
-      result.import_type.should == '.csv'
-    end
-  end
-  
-  describe "Import CSV with lat/lon" do
-    it "should import walmart.csv" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/walmart_latlon.csv", __FILE__),
-                                   :database => "cartodb_importer_test", :username => 'postgres', :password => '',
-                                   :host => 'localhost', :port => 5432, :suggested_name => 'walmart_latlon'
-      result = importer.import!
-      result.name.should == 'walmart_latlon'
-      #result.rows_imported.should == 30
-      result.import_type.should == '.csv'
-    end
-  end  
-
-  describe "Import CartoDB CSV export with lat/lon" do
-    it "should import CartoDB_csv_export.zip" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/CartoDB_csv_export.zip", __FILE__),
-                                   :database => "cartodb_importer_test", :username => 'postgres', :password => '',
-                                   :host => 'localhost', :port => 5432, :suggested_name => 'cartodb_csv_export'
-      result = importer.import!
-      result.name.should == 'cartodb_csv_export'
-      result.rows_imported.should == 155
-      result.import_type.should == '.csv'
-    end
-  end  
-
-  # TODO: check that the_geom is now a real geometry built from geojson.
-  describe "Import CartoDB CSV export with the_geom in geojson" do
-    it "should import CartoDB_csv_multipoly_export.zip" do
-      opt = {:import_from_file => File.expand_path("../support/data/CartoDB_csv_multipoly_export.zip", __FILE__),
-                 :database => "cartodb_importer_test", :username => 'postgres', :password => '',
-                 :host => 'localhost', :port => 5432, :suggested_name => 'cartodb_csv_multipoly_export'}
-      importer = CartoDB::Importer.new opt
-      result = importer.import!
-      result.name.should == 'cartodb_csv_multipoly_export'
-      result.rows_imported.should == 601
-      result.import_type.should == '.csv'
-      
-      # test geometry returned is legit
-      pg = "postgres://#{opt[:username]}:#{opt[:password]}@#{opt[:host]}:#{opt[:port]}/#{opt[:database]}" 
-      sql = "select ST_AsGeoJSON(the_geom,0) as geom from cartodb_csv_multipoly_export limit 1"
-      db_connection = Sequel.connect(pg)            
-      res = db_connection[sql].first[:geom]
-      res.should == '{"type":"MultiPolygon","coordinates":[[[[2,39],[2,39],[2,39],[2,39],[2,39]]]]}'
-    end
-  end  
-
-  describe "Import CartoDB SHP export with lat/lon" do
-    it "should import CartoDB_shp_export.zip" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/CartoDB_shp_export.zip", __FILE__),
-                                   :database => "cartodb_importer_test", :username => 'postgres', :password => '',
-                                   :host => 'localhost', :port => 5432, :suggested_name => 'cartodb_shp_export'
-      result = importer.import!
-      result.name.should == 'cartodb_shp_export'
-      result.rows_imported.should == 155
-      result.import_type.should == '.shp'
-    end
-  end  
-
-  
   
 end

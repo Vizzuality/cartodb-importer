@@ -37,6 +37,7 @@ module CartoDB
         # * drop the_geom_orig
         #
         # TODO: move the geom over using ST_FromGeoJSON once inside PostGIS 2.0
+        
         if column_names.include? "the_geom"        
           if res = @db_connection["select the_geom from #{@suggested_name} limit 1"].first
 
