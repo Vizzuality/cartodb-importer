@@ -164,6 +164,16 @@ describe CartoDB::Importer do
       result.import_type.should == '.csv'
     end
     
+    #the following will fail until we sort out encoding issues
+    pending "should import tweetvt1.csv" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/tweetvt1.csv", __FILE__),
+                                   :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                   :host => 'localhost', :port => 5432, :suggested_name => 'tweetvt1'
+      result = importer.import!
+      result.name.should == 'tweetvt1'
+      #result.rows_imported.should == 4556
+      result.import_type.should == '.csv'
+    end
     # Not supported by cartodb-importer ~ v0.2.1
     # File in format different than UTF-8
     pending "should import estaciones.csv" do
@@ -319,6 +329,16 @@ describe CartoDB::Importer do
       result = importer.import!
       result.name.should == 'tm_world_borders_simpl_0_3'
       result.rows_imported.should == 246
+      result.import_type.should == '.shp'
+    end
+    
+    it "should import SHP file ny_blocks.zip" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/ny_blocks.zip", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432, :suggested_name => 'ny_blocks'
+      result = importer.import!
+      result.name.should == 'ny_blocks'
+      result.rows_imported.should == 39148
       result.import_type.should == '.shp'
     end
   
