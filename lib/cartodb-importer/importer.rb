@@ -1,12 +1,10 @@
 # coding: UTF-8
-def temporary_filename(suffix=nil)  
-  file = Tempfile.new(suffix)
-  file_name = file.path
-  file.close
-  file.unlink
-  file_name
+def temporary_filename(prefix=nil)
+  tf = Tempfile.new(prefix)
+  tempname = tf.path 
+  tf.close! 
+  return tempname
 end
-
 
 module CartoDB
   class Importer
@@ -159,6 +157,39 @@ module CartoDB
         @import_from_file = File.open(new_path,'r')
         @ext = '.csv'
         path = @import_from_file.path
+      end
+
+      # if the file is a gpx file import the track points with all associated data
+      # A GPX file generates 3 tables so it would be good to have the option to create
+      # and import all of them
+      if %W{ .gpx }.include?(@ext)
+        # generate a temporally filename 
+        shp_file = temporary_filename(path)
+
+        # extract the 3 shp files (and associated dbf and so on)
+        # it will create a folder
+        ogr2ogr_bin_path = `which ogr2ogr`.strip
+        # ogr2ogr does not manage well datetime fields in gpx to transform it to string in 
+        # order to import correctly
+        ogr2ogr_command = %Q{#{ogr2ogr_bin_path} -fieldTypeToString DateTime -f "ESRI Shapefile" #{shp_file} #{path}}
+        out = `#{ogr2ogr_command}`
+
+        track_points = "#{shp_file}/track_points.shp"
+        runlog.stdout << track_points
+        # then choose the track_points file to import
+        if Dir.exists?(shp_file) and File.file?(track_points)
+          # add all files to entries to be removed
+          # add the path too in order to remove it 
+          entries = Dir["#{shp_file}/*"]
+          entries << shp_file
+
+          path = track_points
+          # get the file to import and set extension to shp
+          @ext = '.shp'
+        else
+          runlog.err << "failed to create shp file from GPX"
+        end
+
       end
       
       if %W{ .kmz .kml .json .js }.include?(@ext)

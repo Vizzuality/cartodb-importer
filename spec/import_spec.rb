@@ -322,6 +322,21 @@ describe CartoDB::Importer do
       result.import_type.should == '.shp'
     end
   end  
+
+
+  
+  describe "import GPX file" do
+      it "should import GPX file" do
+        importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/route2.gpx", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432
+        result = importer.import!
+        result.should_not == nil
+        result.name.should == 'route2'
+        #result.rows_imported.should == 29
+        result.import_type.should == '.gpx'
+      end
+  end
   
   describe "Import from Simon file" do
     it "should import a shapefile from Simon" do
