@@ -36,7 +36,7 @@ module CartoDB
       @import_from_file = options[:import_from_file]
       if options[:import_from_url]        
         begin
-          @import_from_file = temporary_filename(File.basename(options[:import_from_url]))                
+          @import_from_file = temporary_filename() + File.basename(options[:import_from_url])                
           `wget \"#{options[:import_from_url]}\" -O #{@import_from_file}`
         rescue => e
           log e
