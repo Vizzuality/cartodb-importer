@@ -94,16 +94,16 @@ module CartoDB
     def import!
       begin
         # decompress data and update self with results
-        decompressor = CartoDB::Importer::Decompressor.create(@ext, self.to_import_hash)      
+        decompressor = CartoDB::Import::Decompressor.create(@ext, self.to_import_hash)      
         update_self decompressor.decompress! if decompressor
       
         # Preprocess data and update self with results
         # preprocessors are expected to return a hash datastructure
-        preproc = CartoDB::Importer::Preprocessor.create(@ext, self.to_import_hash)
+        preproc = CartoDB::Import::Preprocessor.create(@ext, self.to_import_hash)
         update_self preproc.process! if preproc
       
         # Load data in
-        loader = CartoDB::Importer::Loader.create(@ext, self.to_import_hash)
+        loader = CartoDB::Import::Loader.create(@ext, self.to_import_hash)
         raise "no importer for this type of data" if !loader      
         i_res, payload = loader.load! 
         update_self i_res if i_res
@@ -113,7 +113,7 @@ module CartoDB
         log "====================="
         log e.backtrace
         log "====================="
-        if @table_created == nil
+        if @table_created
           @db_connection.drop_table @suggested_name
         end
         raise e
