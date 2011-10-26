@@ -16,8 +16,8 @@ module CartoDB
           @runlog.stdout << out
         end
 
-        if File.file?("#{path}.shp")
-          @path = "#{path}.shp"
+        if File.file?("#{@path}.shp")
+          @path = "#{@path}.shp"
           @ext = '.shp'
         else
           @runlog.err << "failed to create shp file from kml"

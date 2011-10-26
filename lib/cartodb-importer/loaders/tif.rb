@@ -1,13 +1,13 @@
 module CartoDB
   module Import
-    class CSV < CartoDB::Import::Loader
+    class TIF < CartoDB::Import::Loader
       
       register_loader :tif
       register_loader :tiff
 
       def process!
 
-        log "Importing raster file: #{path}"
+        log "Importing raster file: #{@path}"
 
         raster2pgsql_bin_path = `which raster2pgsql.py`.strip
 
@@ -26,7 +26,7 @@ module CartoDB
         log "SRID : #{rast_srid_command}"
 
         blocksize = "180x180"
-        full_rast_command = "#{raster2pgsql_bin_path} -I -s #{rast_srid_command.strip} -k #{blocksize} -t  #{random_table_name} -r #{path} | #{@psql_bin_path} #{host} #{port} -U #{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
+        full_rast_command = "#{raster2pgsql_bin_path} -I -s #{rast_srid_command.strip} -k #{blocksize} -t  #{random_table_name} -r #{@path} | #{@psql_bin_path} #{host} #{port} -U #{@db_configuration[:username]} -w -d #{@db_configuration[:database]}"
         log "Running raster2pgsql: #{raster2pgsql_bin_path}  #{full_rast_command}"
         out = `#{full_rast_command}`
         if 0 < out.strip.length

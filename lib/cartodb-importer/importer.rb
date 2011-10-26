@@ -46,7 +46,7 @@ module CartoDB
       raise "import_from_file value can't be nil" unless @import_from_file
       
       # Setup suggested name  
-      unless options[:suggested_name].blank?
+      if options[:suggested_name]
         @force_name     = true
         @suggested_name = get_valid_name(options[:suggested_name])
       else
@@ -95,7 +95,10 @@ module CartoDB
       begin
         # decompress data and update self with results
         decompressor = CartoDB::Import::Decompressor.create(@ext, self.to_import_hash)      
-        update_self decompressor.decompress! if decompressor
+        update_self decompressor.process! if decompressor
+      
+        # TODO: should this be here...?
+        @import_type = @ext        
       
         # Preprocess data and update self with results
         # preprocessors are expected to return a hash datastructure
@@ -105,22 +108,25 @@ module CartoDB
         # Load data in
         loader = CartoDB::Import::Loader.create(@ext, self.to_import_hash)
         raise "no importer for this type of data" if !loader      
-        i_res, payload = loader.load! 
+        i_res, payload = loader.process! 
         update_self i_res if i_res
       
         return payload
       rescue => e
         log "====================="
+        log e
         log e.backtrace
         log "====================="
-        if @table_created
+        begin  # TODO: Do we really mean nil here? What if a table is created?
           @db_connection.drop_table @suggested_name
+        rescue # silent try to drop the table            
         end
+        
         raise e
       ensure
         @db_connection.disconnect
-        if @import_from_file.is_a? File
-          File.unlink(@import_from_file) if File.file?(@import_from_file.path)
+        if @import_from_file.is_a?(File) && File.file?(@import_from_file.path)
+          File.unlink(@import_from_file)
         elsif @import_from_file.is_a? Tempfile
           @import_from_file.unlink
         end

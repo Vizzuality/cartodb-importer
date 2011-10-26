@@ -15,7 +15,7 @@ module CartoDB
       end  
 
       def self.create type, options = {}
-        type = type.downcase.to_sym if type.is_a? String
+        type = type.downcase.gsub(/(\.|\s)/,"").to_sym if type.is_a? String
         c = @@subclasses[type]
         c ? c.new(options) : false
       end

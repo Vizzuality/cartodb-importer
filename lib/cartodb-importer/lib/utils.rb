@@ -31,7 +31,7 @@ module CartoDB
       # updates instance variables with return values from decompressors, preprocessors and loaders
       def update_self obj
         obj.each do |k,v|
-          instance_variable_set("@#{k}", v) if !v.blank?
+          instance_variable_set("@#{k}", v) if v
         end
       end    
       
@@ -50,8 +50,8 @@ module CartoDB
         return uniname
       end
 
-      def log str      
-        puts str # if @@debug
+      def log str            
+        #puts str # if @@debug
       end
       
     end
