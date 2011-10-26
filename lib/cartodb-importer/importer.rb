@@ -1,36 +1,65 @@
 # coding: UTF-8
+def temporary_filename(suffix=nil)  
+  file = Tempfile.new(suffix)
+  file_name = file.path
+  file.close
+  file.unlink
+  file_name
+end
+
 
 module CartoDB
   class Importer
-    RESERVED_COLUMN_NAMES = %W{ oid tableoid xmin cmin xmax cmax ctid }
-    SUPPORTED_FORMATS = %W{ .csv .shp .ods .xls .xlsx .tif .tiff .kml .kmz .js .json}
-    
     class << self
       attr_accessor :debug
     end
     @@debug = true
-    
-    attr_accessor :import_from_file,:import_from_url, :suggested_name,
-                  :ext, :db_configuration, :db_connection, :append_to_table
-                  
-    attr_reader :table_created, :force_name
 
-    def initialize(options = {})
-      @@debug = options[:debug] if options[:debug]
-      @table_created = nil
+    RESERVED_COLUMN_NAMES = %W{ oid tableoid xmin cmin xmax cmax ctid }
+    SUPPORTED_FORMATS = %W{ .csv .shp .ods .xls .xlsx .tif .tiff .kml .kmz .js .json}
       
-      if !options[:import_from_url].blank?
-        #download from internet first
-        potential_name = File.basename(options[:import_from_url])
-        wget_cmd = "wget \"#{options[:import_from_url]}\" -O /tmp/#{potential_name}"
-        #log wget_cmd
-        `#{wget_cmd}`
-        @import_from_file = "/tmp/#{potential_name}"
-      else
-        @import_from_file = options[:import_from_file]
+    attr_accessor :import_from_file,
+                  :import_from_url, 
+                  :suggested_name,                  
+                  :db_configuration, 
+                  :db_connection, 
+                  :append_to_table,
+                  :ext 
+                  
+    attr_reader   :table_created, 
+                  :force_name
+
+    # # Importer Factory
+    # # ==
+    # # Call "register_importer :my_importer" 
+    # # in your subclass to register with factory              
+    # @@subclasses = {}
+    # def self.create options
+    #   c = @@subclasses[type]
+    #   c ? c.new options : raise "Bad importer type: #{type}"
+    # end
+    # def self.register_importer name
+    #   @@subclasses[name] = self
+    # end
+      
+    # Initialiser has to get the file in a standard location on the filesystem                            
+    def initialize(options = {})
+      @@debug = options[:debug]
+      
+      # Setup candidate file
+      @import_from_file = options[:import_from_file]
+      if options[:import_from_url]        
+        begin
+          @import_from_file = temporary_filename(File.basename(options[:import_from_url]))                
+          `wget \"#{options[:import_from_url]}\" -O #{@import_from_file}`
+        rescue => e
+          log e
+          raise e
+        end    
       end
       
-      raise "import_from_file value can't be nil" if @import_from_file.nil?
+      # must have a candidate file
+      raise "import_from_file value can't be nil" unless @import_from_file
 
       @db_configuration = options.slice(:database, :username, :password, :host, :port)
       @db_configuration[:port] ||= 5432
@@ -534,10 +563,8 @@ module CartoDB
       return uniname
     end
     
-    def log(str)
-      if @@debug
-        puts str
-      end
+    def log str      
+      puts str if @@debug
     end
   end
 end
