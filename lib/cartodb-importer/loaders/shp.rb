@@ -14,7 +14,7 @@ module CartoDB
 
         random_table_name = "importing_#{Time.now.to_i}_#{@suggested_name}"
 
-        normalizer_command = "#{@python_bin_path} -Wignore #{File.expand_path("../../../misc/shp_normalizer.py", __FILE__)} #{@path} #{random_table_name}"
+        normalizer_command = "#{@python_bin_path} -Wignore #{File.expand_path("../../../../misc/shp_normalizer.py", __FILE__)} #{@path} #{random_table_name}"
         out = `#{normalizer_command}`
         shp_args_command = out.split( /, */, 4 )
 
