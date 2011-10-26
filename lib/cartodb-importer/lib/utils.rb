@@ -2,7 +2,7 @@
 module CartoDB
   module Import
     module Util
-      def temporary_filename(prefix=nil)
+      def temporary_filename(prefix="")
         tf = Tempfile.new(prefix)
         tempname = tf.path 
         tf.close! 

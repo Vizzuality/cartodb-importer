@@ -16,7 +16,7 @@ module CartoDB
 
         random_table_name = "importing_#{Time.now.to_i}_#{@suggested_name}"
 
-        gdal_command = "#{@python_bin_path} -Wignore #{File.expand_path("../../../misc/srid_from_gdal.py", __FILE__)} #{@path}"
+        gdal_command = "#{@python_bin_path} -Wignore #{File.expand_path("../../../../misc/srid_from_gdal.py", __FILE__)} #{@path}"
         rast_srid_command = `#{gdal_command}`.strip
 
         if 0 < rast_srid_command.strip.length
