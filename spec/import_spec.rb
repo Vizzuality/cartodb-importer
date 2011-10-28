@@ -123,6 +123,15 @@ describe CartoDB::Importer do
       result.rows_imported.should == 4
       result.import_type.should == '.csv'
     end
+    it "should import CSV even from a ZIP file with the given name" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/bus.zip", __FILE__),
+                                       :database => "cartodb_importer_test", :username => 'postgres', :password => '',
+                                       :host => 'localhost', :port => 5432, :suggested_name => "bus"
+      result = importer.import!
+      result.name.should == 'bus'
+      result.rows_imported.should == 12468
+      result.import_type.should == '.shp'
+    end
   end
 
   describe "#CSV" do
@@ -332,13 +341,13 @@ describe CartoDB::Importer do
       result.import_type.should == '.shp'
     end
     
-    it "should import SHP file ny_blocks.zip" do
-      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/ny_blocks.zip", __FILE__),
+    it "should import SHP file bus.zip" do
+      importer = CartoDB::Importer.new :import_from_file => File.expand_path("../support/data/bus.zip", __FILE__),
                                        :database => "cartodb_importer_test", :username => 'postgres', :password => '',
-                                       :host => 'localhost', :port => 5432, :suggested_name => 'ny_blocks'
+                                       :host => 'localhost', :port => 5432, :suggested_name => 'bus'
       result = importer.import!
-      result.name.should == 'ny_blocks'
-      result.rows_imported.should == 39148
+      result.name.should == 'bus'
+      result.rows_imported.should == 12468
       result.import_type.should == '.shp'
     end
   

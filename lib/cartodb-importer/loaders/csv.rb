@@ -23,11 +23,13 @@ module CartoDB
         # Sanitize column names where needed
         column_names = @db_connection.schema(@suggested_name).map{ |s| s[0].to_s }
         need_sanitizing = column_names.each do |column_name|
+          #log column_name.sanitize_column_name
+          #log column_name.sanitize_column_name
           if column_name != column_name.sanitize_column_name
             @db_connection.run("ALTER TABLE #{@suggested_name} RENAME COLUMN \"#{column_name}\" TO #{column_name.sanitize_column_name}")
           end
         end
-
+        
         # Importing CartoDB CSV exports
         # ===============================
         # * if there is a column already called the_geom

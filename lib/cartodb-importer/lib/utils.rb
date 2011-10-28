@@ -51,7 +51,7 @@ module CartoDB
       end
 
       def log str            
-        #puts str # if @@debug
+        puts str # if @@debug
       end
       
     end
